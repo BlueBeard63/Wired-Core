@@ -36,7 +36,7 @@ namespace Wired.Services
         {
             if (!_assets.WiredAssets.ContainsKey(gun.equippedGunAsset.GUID))
                 return;
-            if (_assets.WiredAssets[gun.equippedGunAsset.GUID].Type != WiredAssetType.WiringTool)
+            if (!(_assets.WiredAssets[gun.equippedGunAsset.GUID] is WiringToolAsset))
                 return;
             shouldAllow = false;
         }
@@ -44,7 +44,7 @@ namespace Wired.Services
         {
             if (!_assets.WiredAssets.ContainsKey(gun.equippedGunAsset.GUID))
                 return;
-            if (_assets.WiredAssets[gun.equippedGunAsset.GUID].Type != WiredAssetType.WiringTool)
+            if (!(_assets.WiredAssets[gun.equippedGunAsset.GUID] is WiringToolAsset))
                 return;
 
             if (!gun.isAiming) return;
@@ -68,19 +68,19 @@ namespace Wired.Services
         {
             if (!_assets.WiredAssets.ContainsKey(gun.equippedGunAsset.GUID))
                 return;
-            if (_assets.WiredAssets[gun.equippedGunAsset.GUID].Type != WiredAssetType.WiringTool)
+            if (!(_assets.WiredAssets[gun.equippedGunAsset.GUID] is WiringToolAsset))
                 return;
 
             UnturnedPlayer player = UnturnedPlayer.FromCSteamID(gun.player.channel.owner.playerID.steamID);
-            Raycast raycast = new Raycast(gun.player);
+            Raycast raycast = new Raycast(gun.player, 16);
 
-            var drop = raycast.GetBarricade(out _);
+            var drop = raycast.GetBarricade(out _, out float distance);
             if(drop != null)
             {
                 TrySelectNode(player, raycast, drop);
                 return;
             }
-            var ground = raycast.GetPoint(range: 10);
+            var ground = raycast.GetPoint();
             if(ground != null)
             {
                 if (!_selectedPath.ContainsKey(player.CSteamID))

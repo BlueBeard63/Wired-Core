@@ -1,13 +1,9 @@
 ﻿using Rocket.Unturned.Player;
 using SDG.Unturned;
 using Steamworks;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
+using Wired.Utilities;
+using Wired.WiredInteractables;
 
 namespace Wired.Wrappers
 {
@@ -18,8 +14,10 @@ namespace Wired.Wrappers
         private InteractableOxygenator _oxygenator;
         private InteractableSafezone _safezone;
         private InteractableCharge _charge;
+        private IWiredInteractable _wiredInteractable;
         public ConsumerInteractable(Transform barricade)
         {
+            _wiredInteractable = barricade.GetComponent<IWiredInteractable>();
             _spot = barricade.GetComponent<InteractableSpot>();
             _oven = barricade.GetComponent<InteractableOven>();
             _oxygenator = barricade.GetComponent<InteractableOxygenator>();
@@ -29,6 +27,11 @@ namespace Wired.Wrappers
 
         public void SetPowered(bool powered)
         {
+            if (_wiredInteractable != null)
+            {
+                _wiredInteractable.SetPowered(powered);
+                WiredLogger.Log($"Set wired interactable {(_wiredInteractable.interactable != null ? _wiredInteractable.interactable.name : "null")} to {(powered ? "ON" : "OFF")}");
+            }
             if (_spot != null)
             {
                 BarricadeManager.ServerSetSpotPowered(_spot, powered);

@@ -25,7 +25,6 @@ namespace Wired.Services
             _assets = resources;
             BarricadeManager.onBarricadeSpawned += OnBarricadeSpawned;
 
-            // Initialize existing barricades
             BarricadeFinder bf = new BarricadeFinder();
             foreach (BarricadeRegion reg in BarricadeManager.regions)
             {
@@ -48,14 +47,13 @@ namespace Wired.Services
 
         private void TryInitializeBarricade(BarricadeDrop barricade)
         {
-            // 1. Check if we have a defined Cached Asset for this GUID
             if (_assets.WiredAssets.TryGetValue(barricade.asset.GUID, out IWiredAsset wiredAsset))
             {
                 InitFromAsset(barricade, wiredAsset);
                 return;
             }
 
-            //InitFromWhatever(barricade);
+            InitFromWhatever(barricade);
         }
 
         private void InitFromAsset(BarricadeDrop barricade, IWiredAsset asset)
@@ -65,7 +63,7 @@ namespace Wired.Services
             switch (asset)
             {
                 case SwitchAsset switchAsset:
-                    var sw = barricade.model.gameObject.AddComponent<SwitchNode>();
+                    var sw = barricade.model.gameObject.AddComponent<GateNode>();
                     sw.Asset = switchAsset;
                     sw.SetPowered(false);
                     sw.SwitchableByPlayer = true;
@@ -74,6 +72,18 @@ namespace Wired.Services
 
                 case PlayerDetectorAsset detectorAsset:
                     createdNode = InitializePlayerDetector(barricade, detectorAsset);
+                    break;
+
+                case KeypadAsset keypadAsset:
+                    createdNode = InitializeKeypad(barricade, keypadAsset);
+                    break;
+
+                case RemoteReceiverAsset receiverAsset:
+                    createdNode = InitializeRemoteReceiver(barricade, receiverAsset);
+                    break;
+
+                case RemoteTransmitterAsset transmitterAsset:
+                    createdNode = InitializeRemoteTransmitter(barricade, transmitterAsset);
                     break;
 
                 case TimerAsset timerAsset:
@@ -88,7 +98,6 @@ namespace Wired.Services
                 case SupplierAsset supplierAsset:
                     var sup = barricade.model.gameObject.AddComponent<SupplierNode>();
                     sup.Asset = supplierAsset;
-                    sup.SetPowered(false);
                     sup.Supply = supplierAsset.Supply;
                     createdNode = sup;
                     break;
@@ -108,9 +117,20 @@ namespace Wired.Services
             }
         }
 
-        private SwitchNode InitializePlayerDetector(BarricadeDrop barricade, PlayerDetectorAsset asset)
+        private GateNode InitializeKeypad(BarricadeDrop barricade, KeypadAsset keypadAsset)
         {
-            var sw = barricade.model.gameObject.AddComponent<SwitchNode>();
+            var sw = barricade.model.gameObject.AddComponent<GateNode>();
+            sw.SetPowered(false);
+            sw.SwitchableByPlayer = false;
+
+            var keypad = barricade.model.gameObject.AddComponent<Keypad>();
+            keypad.StaysOnSeconds = keypadAsset.StaysOpenSeconds;
+            return sw;
+        }
+
+        private GateNode InitializePlayerDetector(BarricadeDrop barricade, PlayerDetectorAsset asset)
+        {
+            var sw = barricade.model.gameObject.AddComponent<GateNode>();
             sw.SetPowered(false);
             sw.SwitchableByPlayer = false;
 
@@ -122,11 +142,31 @@ namespace Wired.Services
                 return null;
             }
 
+            detectorObj.gameObject.SetActive(true);
+
             var detector = detectorObj.gameObject.AddComponent<PlayerDetector>();
             detector.Radius = asset.Radius;
             detector.Inverted = asset.Inverted;
 
             return sw;
+        }
+
+        private GateNode InitializeRemoteReceiver(BarricadeDrop barricade, RemoteReceiverAsset asset)
+        {
+            var sw = barricade.model.gameObject.AddComponent<GateNode>();
+            sw.SetPowered(false);
+            sw.SwitchableByPlayer = false;
+            barricade.model.gameObject.AddComponent<RemoteReceiver>();
+            return sw;
+        }
+
+        private ConsumerNode InitializeRemoteTransmitter(BarricadeDrop barricade, RemoteTransmitterAsset asset)
+        {
+            barricade.model.gameObject.AddComponent<RemoteTransmitter>().Range = asset.Range;
+            var cons = barricade.model.gameObject.AddComponent<ConsumerNode>();
+            cons.SetPowered(false);
+            cons.Consumption = asset.Consumption;
+            return cons;
         }
 
         private void InitFromWhatever(BarricadeDrop barricade)
@@ -151,13 +191,8 @@ namespace Wired.Services
 
                 if (parser.TryGetFloat("Power_Consumption", out float consumption))
                     node.Consumption = consumption;
-
-                if (parser.HasEntry("WiredType BatteryCharger"))
-                {
-                    var charger = barricade.model.gameObject.AddComponent<BatteryCharger>();
-                    if (parser.TryGetFloat("ChargePerHour", out float chargerate))
-                        charger.ChargeRateUnitsPerHour = chargerate;
-                }
+                else
+                    node.Consumption = 100f;
 
                 OnNodeCreated?.Invoke(barricade, node);
             }

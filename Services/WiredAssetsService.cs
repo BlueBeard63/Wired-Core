@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 using Wired.Utilities;
 using Wired.WiredAssets;
 
@@ -40,7 +41,7 @@ namespace Wired.Services
                 if (!WiredAssets.ContainsKey(asset.GUID))
                 {
                     WiredAssets.Add(asset.GUID, asset);
-                    WiredLogger.Log($"Added default wired asset: {asset.Type} ({asset.GUID})");
+                    WiredLogger.Log($"Added default wired asset: ({asset.GUID})");
                 }
             }
         }
@@ -65,8 +66,6 @@ namespace Wired.Services
                     WiredLogger.Log($"Found wired asset: {asset.name} ({asset.GUID}) as {foundentry}");
                     switch (foundentry.Split(' ')[1])
                     {
-                        default:
-                            break;
                         case "WiringTool":
                             WiredAssets.Add(asset.GUID, new WiringToolAsset(asset.GUID));
                             break;
@@ -85,6 +84,8 @@ namespace Wired.Services
                         case "Supplier":
                             PopulateSupplier(parser, asset);
                             break;
+                        default:
+                            break;
                     }
                 }
             }
@@ -100,8 +101,8 @@ namespace Wired.Services
             {
                 WiredAssets.Add(asset.GUID,
                 new PlayerDetectorAsset(
-                        guid: asset.GUID,
-                        radius: parser.TryGetFloat("radius", out float radius) ? radius : 3f));
+                guid: asset.GUID,
+                radius: parser.TryGetFloat("Radius", out float radius) ? radius : 3f));
             }
             else if (parser.HasEntry("WiredBuild Timer"))
             {
@@ -113,6 +114,13 @@ namespace Wired.Services
             else if (parser.HasEntry("WiredBuild RemoteReceiver"))
             {
                 WiredAssets.Add(asset.GUID, new RemoteReceiverAsset(asset.GUID));
+            }
+            else if (parser.HasEntry("WiredBuild Keypad"))
+            {
+                WiredAssets.Add(asset.GUID, 
+                new KeypadAsset(
+                guid: asset.GUID,
+                staysOpenSeconds: parser.TryGetFloat("StaysOpenSeconds", out float seconds) ? seconds : 3));
             }
         }
         private void PopulateConsumer(AssetParser parser, ItemAsset asset)
@@ -130,6 +138,15 @@ namespace Wired.Services
         {
             var supply = parser.TryGetFloat("Power_Supply", out float supp) ? supp : 100f;
             WiredAssets.Add(asset.GUID, new SupplierAsset(asset.GUID, supply));
+        }
+        private bool IsConsumer(Transform model)
+        {
+            if (model == null) return false;
+            return model.GetComponent<InteractableSpot>() != null ||
+                   model.GetComponent<InteractableOven>() != null ||
+                   model.GetComponent<InteractableOxygenator>() != null ||
+                   model.GetComponent<InteractableSafezone>() != null ||
+                   model.GetComponent<InteractableCharge>() != null;
         }
     }
 }

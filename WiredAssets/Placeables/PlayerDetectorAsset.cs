@@ -10,7 +10,6 @@ namespace Wired.WiredAssets
     public class PlayerDetectorAsset : IWiredAsset
     {
         public Guid GUID { get; }
-        public WiredAssetType Type => WiredAssetType.PlayerDetector;
         public float Radius { get; }
         public bool Inverted { get; }
 

@@ -9,11 +9,10 @@ namespace Wired
 {
     public class Config : IRocketPluginConfiguration, IDefaultable
     {
-        public int zalupa;
-
+        public bool LogDebugMessages;
         public void LoadDefaults()
         {
-            zalupa = 5;
+            LogDebugMessages = true;
         }
     }
 }

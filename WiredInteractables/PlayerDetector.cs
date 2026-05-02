@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using Wired.Models;
 using Wired.Utilities;
 
 namespace Wired.WiredInteractables
@@ -17,6 +18,7 @@ namespace Wired.WiredInteractables
     {
         public Interactable interactable { get; private set; }
         private Collider _collider;
+        private GateNode _switchNode;
         public bool IsOn {  get; private set; }
 
         // ----- Detector config -----
@@ -30,10 +32,7 @@ namespace Wired.WiredInteractables
 
         public delegate void PlayerUnDetected(PlayerDetector detector);
         public static event PlayerUnDetected OnPlayerUnDetected;
-        public void SetPowered(bool state)
-        {
-            
-        }
+        public void SetPowered(bool state) { }
 
         private void Awake()
         {
@@ -49,10 +48,14 @@ namespace Wired.WiredInteractables
                 _collider.isTrigger = true;
                 ((SphereCollider)_collider).radius = Radius;
             }
-        }
-        private void OnDestroy()
-        {
-
+            _switchNode = GetComponentInParent<GateNode>();
+            if (_switchNode == null)
+            {
+                WiredLogger.Error("Playerdetector couldn't find a switchnode");
+                Destroy(gameObject);
+            }
+            _collider.transform.gameObject.layer = 30;
+            _collider.transform.gameObject.tag = "Trap";
         }
 
         public void OnTriggerEnter(Collider other)
@@ -60,6 +63,7 @@ namespace Wired.WiredInteractables
             if (other.gameObject.CompareTag("Player"))
             {
                 BarricadeManager.ServerSetSpotPowered((InteractableSpot)interactable, true);
+                _switchNode.Switch(Inverted ? false : true);
                 OnPlayerDetected?.Invoke(this);
             }
             else
@@ -72,6 +76,7 @@ namespace Wired.WiredInteractables
             if (other.gameObject.CompareTag("Player"))
             {
                 BarricadeManager.ServerSetSpotPowered((InteractableSpot)interactable, false);
+                _switchNode.Switch(Inverted ? true : false);
                 OnPlayerUnDetected?.Invoke(this);
             }
             else

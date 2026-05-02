@@ -9,7 +9,6 @@ namespace Wired.WiredAssets
     internal class ManualTabletAsset : IWiredAsset
     {
         public Guid GUID { get; }
-        public WiredAssetType Type { get; } = WiredAssetType.ManualTablet;
         public ManualTabletAsset(Guid guid)
         {
             GUID = guid;

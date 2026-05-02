@@ -9,7 +9,6 @@ namespace Wired.WiredAssets
     public class RemoteToolAsset : IWiredAsset
     {
         public Guid GUID { get; }
-        public WiredAssetType Type { get; } = WiredAssetType.RemoteTool;
         public RemoteToolAsset(Guid guid)
         {
             GUID = guid;

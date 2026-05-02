@@ -86,7 +86,7 @@ namespace Wired.Models
             }
 
             sw.Stop();
-            WiredLogger.Log($"Recalculated power flow in a {Nodes.Count}-node network, {sw.ElapsedMilliseconds} ms.");
+            WiredLogger.Log($"Recalculated power flow in a {Nodes.Count}-node network, took {sw.ElapsedTicks/10000f} ms.");
         }
 
         private Dictionary<IElectricNode, List<IElectricNode>> BuildAdjacencyMap()

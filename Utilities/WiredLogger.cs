@@ -47,6 +47,8 @@ namespace Wired.Utilities
             Console.WriteLine("                 WIRED IS NOT INSTALLED");
             Console.WriteLine("    Add 3583223837 to your WorkshopDownloadConfig.json");
             Console.WriteLine("");
+            Console.WriteLine(" For more information visit Wired™ page on Steam Workshop");
+            Console.WriteLine("");
             Console.WriteLine("##########################################################");
             Console.WriteLine("##########################################################");
             Console.ResetColor();

@@ -9,10 +9,7 @@ namespace Wired.WiredAssets
     public class SupplierAsset : IWiredAsset
     {
         public Guid GUID { get; }
-        public WiredAssetType Type { get; } = WiredAssetType.Supplier;
-
         public float Supply { get; set; }
-
         public SupplierAsset(Guid guid, float supply)
         {
             GUID = guid;

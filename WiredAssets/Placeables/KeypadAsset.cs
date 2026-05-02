@@ -6,12 +6,14 @@ using System.Threading.Tasks;
 
 namespace Wired.WiredAssets
 {
-    public class RemoteReceiverAsset : IWiredAsset
+    public class KeypadAsset : IWiredAsset
     {
         public Guid GUID { get; }
-        public RemoteReceiverAsset(Guid guid)
+        public float StaysOpenSeconds;
+        public KeypadAsset(Guid guid, float staysOpenSeconds)
         {
             GUID = guid;
+            StaysOpenSeconds = staysOpenSeconds;
         }
     }
 }

@@ -9,7 +9,6 @@ namespace Wired.WiredAssets
     public class WiringToolAsset : IWiredAsset
     {
         public Guid GUID { get; }
-        public WiredAssetType Type { get; } = WiredAssetType.WiringTool;
         public WiringToolAsset(Guid guid)
         {
             GUID = guid;

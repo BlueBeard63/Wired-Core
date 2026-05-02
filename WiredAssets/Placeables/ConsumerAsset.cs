@@ -9,7 +9,6 @@ namespace Wired.WiredAssets
     public class ConsumerAsset : IWiredAsset
     {
         public Guid GUID { get; }
-        public WiredAssetType Type { get; } = WiredAssetType.Consumer;
         public float Consumption { get; set; }
         public ConsumerAsset(Guid guid, float consumption)
         {

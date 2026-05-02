@@ -6,39 +6,46 @@ namespace Wired
     public class Raycast
     {
         private Player player;
+        private uint Range;
 
-        public Raycast(Player player)
+        public Raycast(Player player, uint range = 8)
         {
             this.player = player;
+            Range = range;
         }
-        public BarricadeDrop GetBarricade(out string collider)
+        public BarricadeDrop GetBarricade(out string colliderName, out float hitDistance)
         {
+            colliderName = "";
+            hitDistance = 0f;
             Transform aim = player.look.aim;
-            collider = "";
-            if (!Physics.Raycast(aim.position, aim.forward, out var hitInfo, float.PositiveInfinity, RayMasks.BLOCK_COLLISION))
+
+            if (!Physics.Raycast(aim.position, aim.forward, out var hit, Range, RayMasks.BARRICADE_INTERACT))
             {
                 return null;
             }
-            if (!Physics.Raycast(aim.position, aim.forward, out var hit, float.PositiveInfinity, RayMasks.BARRICADE_INTERACT) || hitInfo.transform != hit.transform)
+
+            if (Physics.Raycast(aim.position, aim.forward, out var wallHit, hit.distance - 0.1f, RayMasks.BLOCK_COLLISION))
             {
                 return null;
             }
-            RaycastHit raycastInfo;
-            Physics.Raycast(new Ray(player.look.aim.position, player.look.aim.forward), out raycastInfo, float.PositiveInfinity, RayMasks.BARRICADE_INTERACT);
-            if ((raycastInfo.transform.name == "Hinge" || raycastInfo.transform.name == "Left_Hinge" || raycastInfo.transform.name == "Right_Hinge") && raycastInfo.transform.parent.name == "Skeleton")
+
+            colliderName = hit.collider.name;
+            Transform targetTransform = hit.transform;
+
+            if (targetTransform.parent != null && targetTransform.parent.name == "Skeleton")
             {
-                BarricadeDrop barricadeDrop = BarricadeManager.FindBarricadeByRootTransform(raycastInfo.transform.parent.parent);
-                collider = raycastInfo.collider.name;
-                return barricadeDrop;
+                if (targetTransform.name.Contains("Hinge"))
+                {
+                    targetTransform = targetTransform.parent.parent;
+                }
             }
-            BarricadeDrop bardrop = BarricadeManager.FindBarricadeByRootTransform(raycastInfo.transform);
-            collider = raycastInfo.collider.name;
-            return bardrop;
+            hitDistance = hit.distance;
+            return BarricadeManager.FindBarricadeByRootTransform(targetTransform);
         }
-        public Vector3 GetPoint(float range = float.PositiveInfinity)
+        public Vector3 GetPoint()
         {
             Transform aim = player.look.aim;
-            if (!Physics.Raycast(aim.position, aim.forward, out var hitInfo, range, RayMasks.BLOCK_COLLISION))
+            if (!Physics.Raycast(aim.position, aim.forward, out var hitInfo, Range, RayMasks.BLOCK_COLLISION))
             {
                 return Vector3.zero;
             }

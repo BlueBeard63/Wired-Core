@@ -118,15 +118,17 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Services\KeypadUIService.cs" />
     <Compile Include="Services\WiredAssetsService.cs" />
     <Compile Include="WiredAssets\Items\EngineerGogglesAsset.cs" />
     <Compile Include="WiredAssets\Items\ManualTabletAsset.cs" />
     <Compile Include="WiredAssets\Placeables\ConsumerAsset.cs" />
+    <Compile Include="WiredAssets\Placeables\KeypadAsset.cs" />
     <Compile Include="WiredAssets\Placeables\SupplierAsset.cs" />
     <Compile Include="WiredAssets\IWiredAsset.cs" />
     <Compile Include="JsonService.cs" />
     <Compile Include="Models\ElectricNetwork.cs" />
-    <Compile Include="Models\SwitchNode.cs" />
+    <Compile Include="Models\GateNode.cs" />
     <Compile Include="Models\NodeConnection.cs" />
     <Compile Include="Models\ConsumerNode.cs" />
     <Compile Include="Models\IElectricNode.cs" />
@@ -156,12 +158,15 @@
     <Compile Include="WiredAssets\Placeables\RemoteTransmitterAsset.cs" />
     <Compile Include="WiredInteractables\BatteryCharger.cs" />
     <Compile Include="WiredInteractables\IWiredInteractable.cs" />
+    <Compile Include="WiredInteractables\Keypad.cs" />
     <Compile Include="WiredInteractables\PlayerDetector.cs" />
+    <Compile Include="WiredInteractables\RemoteReceiver.cs" />
+    <Compile Include="WiredInteractables\RemoteTransmitter.cs" />
     <Compile Include="Wrappers\ConsumerInteractable.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy /Y "$(TargetPath)" "D:\SteamCMD\steamapps\common\U3DS\Servers\Default\Rocket\Plugins"</PostBuildEvent>
+    <PostBuildEvent>xcopy /Y "$(TargetPath)" "C:\Program Files (x86)\Steam\steamapps\common\U3DS\Servers\Default\Rocket\Plugins"</PostBuildEvent>
   </PropertyGroup>
 </Project>

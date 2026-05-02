@@ -9,20 +9,5 @@ namespace Wired.WiredAssets
     public interface IWiredAsset
     {
         Guid GUID { get; }
-        WiredAssetType Type { get; }
-    }
-    public enum WiredAssetType
-    {
-        WiringTool,
-        RemoteTool,
-        ManualTablet,
-        Supplier,
-        Consumer,
-        Switch,
-        Timer,
-        RemoteReceiver,
-        RemoteTransmitter,
-        PlayerDetector,
-        EngineerGoggles,
     }
 }

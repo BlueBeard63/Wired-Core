@@ -9,7 +9,6 @@ namespace Wired.WiredAssets
     public class SwitchAsset : IWiredAsset
     {
         public Guid GUID { get; }
-        public WiredAssetType Type { get; } = WiredAssetType.Switch;
         public bool SwitchableByPlayer { get; set; } = false;
         public SwitchAsset(Guid guid, bool switchable)
         {

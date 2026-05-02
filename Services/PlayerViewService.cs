@@ -40,12 +40,26 @@ namespace Wired.Services
         private void OnGlassesChanged_Global(PlayerClothing obj)
         {
             WiredLogger.Log($"Player {obj.player.channel.owner.playerID.steamID} changed glasses.");
-            if (obj.glassesAsset == null || !_assets.WiredAssets.ContainsKey(obj.glassesAsset.GUID))
+            if (_playersWithGogglesOn.Contains(UnturnedPlayer.FromPlayer(obj.player)))
             {
-                _playersWithGogglesOn.Remove(UnturnedPlayer.FromPlayer(obj.player));
+                if(obj.glassesAsset == null)
+                {
+                    _playersWithGogglesOn.Remove(UnturnedPlayer.FromPlayer(obj.player));
+                    ClearGogglesView(obj.player.channel.owner.playerID.steamID);
+                    return;
+                }
+                if(!_assets.WiredAssets.ContainsKey(obj.glassesAsset.GUID) || !(_assets.WiredAssets[obj.glassesAsset.GUID] is EngineerGogglesAsset))
+                {
+                    _playersWithGogglesOn.Remove(UnturnedPlayer.FromPlayer(obj.player));
+                    ClearGogglesView(obj.player.channel.owner.playerID.steamID);
+                    return;
+                }
+            }
+            if(obj.glassesAsset == null)
+            {
                 return;
             }
-            if (_assets.WiredAssets.ContainsKey(obj.glassesAsset.GUID) && _assets.WiredAssets[obj.glassesAsset.GUID].Type == WiredAssetType.EngineerGoggles)
+            if (_assets.WiredAssets.ContainsKey(obj.glassesAsset.GUID) && !(_assets.WiredAssets[obj.glassesAsset.GUID] is EngineerGogglesAsset))
             {
                 _playersWithGogglesOn.Add(UnturnedPlayer.FromPlayer(obj.player));
                 WiredLogger.Log($"Player {obj.player.channel.owner.playerID.steamID} has Wired Engineer Goggles on.");
@@ -72,10 +86,10 @@ namespace Wired.Services
         {
             var asset = obj.asset;
             if (asset == null)
-            {
                 return;
-            }
-            if (_assets.WiredAssets.ContainsKey(asset.GUID) && _assets.WiredAssets[asset.GUID].Type == WiredAssetType.WiringTool)
+
+
+            if (_assets.WiredAssets.ContainsKey(asset.GUID) && _assets.WiredAssets[asset.GUID] is WiringToolAsset)
             {
                 UpdateNodesView(obj.player.channel.owner.playerID.steamID);
             }
@@ -83,7 +97,7 @@ namespace Wired.Services
 
         private void OnEquipRequested(Player player, ItemAsset asset, ref bool shouldAllow)
         {
-            if (_assets.WiredAssets.ContainsKey(asset.GUID) && _assets.WiredAssets[asset.GUID].Type == WiredAssetType.WiringTool)
+            if (_assets.WiredAssets.ContainsKey(asset.GUID) && _assets.WiredAssets[asset.GUID] is WiringToolAsset)
             {
                 UpdateNodesView(player.channel.owner.playerID.steamID);
             }
@@ -91,7 +105,7 @@ namespace Wired.Services
 
         private void OnDequipRequested(Player player, ItemAsset asset, ref bool shouldAllow)
         {
-            if (_assets.WiredAssets.ContainsKey(asset.GUID) && _assets.WiredAssets[asset.GUID].Type == WiredAssetType.WiringTool)
+            if (_assets.WiredAssets.ContainsKey(asset.GUID) && _assets.WiredAssets[asset.GUID] is WiringToolAsset)
             {
                 player.ServerShowHint("", 0);
                 UnturnedPlayer uplayer = UnturnedPlayer.FromPlayer(player);
@@ -129,8 +143,8 @@ namespace Wired.Services
                     return;
 
 
-                Raycast ray = new Raycast(player.Player);
-                BarricadeDrop drop = ray.GetBarricade(out _);
+                Raycast ray = new Raycast(player.Player, 16);
+                BarricadeDrop drop = ray.GetBarricade(out _, out float distance);
                 
                 if (drop == null)
                 {
@@ -139,8 +153,11 @@ namespace Wired.Services
                     ClearGogglesView(player.CSteamID);
                     continue;
                 }
-
-                if (_playersWithGogglesOn.Contains(player))
+                if(distance > 4)
+                {
+                    ClearGogglesView(player.CSteamID);
+                }
+                if (_playersWithGogglesOn.Contains(player) && distance <=4)
                 {
                     UpdateGogglesView(player.CSteamID, drop);
                 }
@@ -189,7 +206,7 @@ namespace Wired.Services
 
                     if (node1type is SupplierNode || node2type is SupplierNode)
                         effect = _resources.preview_power;
-                    else if (node2type is SwitchNode || node2type is SwitchNode)
+                    else if (node2type is GateNode || node2type is GateNode)
                         effect = _resources.preview_gate;
                     else if (node2type is TimerNode || node2type is TimerNode)
                         effect = _resources.preview_timer;
@@ -230,7 +247,7 @@ namespace Wired.Services
                     sendEffectCool(player, t.position, _resources.node_consumer);
                 else if (node is SupplierNode)
                     sendEffectCool(player, t.position, _resources.node_power);
-                else if (node is SwitchNode)
+                else if (node is GateNode)
                     sendEffectCool(player, t.position, _resources.node_gate);
                 else if (node is TimerNode)
                     sendEffectCool(player, t.position, _resources.node_timer);
@@ -250,7 +267,7 @@ namespace Wired.Services
                 {
                     pathEffect = _resources.path_power;
                 }
-                else if (connection.Node1 is SwitchNode || connection.Node2 is SwitchNode)
+                else if (connection.Node1 is GateNode || connection.Node2 is GateNode)
                 {
                     pathEffect = _resources.path_gate;
                 }
@@ -303,7 +320,7 @@ namespace Wired.Services
                         EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Consumer", true);
                     }
                     break;
-                case SwitchNode sw:
+                case GateNode sw:
                     {
                         EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Supplier", false);
                         EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Consumer", false);

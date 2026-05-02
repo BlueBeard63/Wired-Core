@@ -32,8 +32,6 @@ namespace Wired.Services
             Plugin.OnTimerExpired += OnTimerExpired;
             Plugin.OnGeneratorFuelUpdated += OnGeneratorFuelUpdated;
             Plugin.OnGeneratorPoweredChanged += OnGeneratorPoweredChanged;
-            PlayerDetector.OnPlayerDetected += PlayerDetector_OnPlayerDetected;
-            PlayerDetector.OnPlayerUnDetected += PlayerDetector_OnPlayerUnDetected;
         }
 
         private void OnGeneratorPoweredChanged(InteractableGenerator generator, bool isPowered)
@@ -78,20 +76,6 @@ namespace Wired.Services
             }
         }
 
-        private void PlayerDetector_OnPlayerUnDetected(PlayerDetector detector)
-        {
-            var switchnode = detector.GetComponentInParent<SwitchNode>();
-            if (switchnode == null)
-            {
-                
-            }
-        }
-
-        private void PlayerDetector_OnPlayerDetected(PlayerDetector detector)
-        {
-            throw new NotImplementedException();
-        }
-
         private void OnTimerExpired(TimerNode timer)
         {
             if(_nodeToNetwork.TryGetValue(timer, out ElectricNetwork net))
@@ -100,7 +84,7 @@ namespace Wired.Services
             }
         }
 
-        private void OnSwitchToggled(SwitchNode sw, bool state)
+        private void OnSwitchToggled(GateNode sw, bool state)
         {
             if (_nodeToNetwork.TryGetValue(sw, out ElectricNetwork net))
             {
@@ -252,7 +236,7 @@ namespace Wired.Services
 
                 bool isOrphan = !allConnections.Any(c => c.Node1 == node || c.Node2 == node);
 
-                if (isOrphan)
+                if (isOrphan && !(node is SupplierNode))
                 {
                     if (node.IsPowered) node.SetPowered(false);
                     continue;

@@ -1,13 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Reflection;
+﻿using System.Reflection;
 using HarmonyLib;
 using Rocket.API.Extensions;
 using Rocket.Core.Plugins;
 using Rocket.Unturned;
-using SDG.NetPak;
+using Rocket.Unturned.Player;
 using SDG.NetTransport;
 using SDG.Unturned;
+using Steamworks;
 using Wired.Models;
 using Wired.Services;
 using Wired.Utilities;
@@ -23,9 +22,9 @@ namespace Wired
 
         public ServiceContainer Services;
 
-        public delegate void SwitchToggled(SwitchNode sw, bool state);
+        public delegate void SwitchToggled(GateNode sw, bool state);
         public static event SwitchToggled OnSwitchToggled;
-        public void SendSwitchToggled(SwitchNode sw, bool state) => OnSwitchToggled?.Invoke(sw, state);
+        public void SendSwitchToggled(GateNode sw, bool state) => OnSwitchToggled?.Invoke(sw, state);
 
         public delegate void TimerExpired(TimerNode timer);
         public static event TimerExpired OnTimerExpired;
@@ -46,6 +45,9 @@ namespace Wired
         public delegate void GeneratorPoweredChanged(InteractableGenerator generator, bool isPowered);
         public static event GeneratorPoweredChanged OnGeneratorPoweredChanged;
 
+        public delegate void KeypadInteracted(Keypad keypad, Player player);
+        public static event KeypadInteracted OnKeypadInteractRequested;
+
         protected override void Load()
         {
             Instance = this;
@@ -60,7 +62,9 @@ namespace Wired
             U.Events.OnPlayerConnected += OnPlayerConnected;
             U.Events.OnPlayerDisconnected += OnPlayerDisconnected;
             Level.onLevelLoaded += OnLevelLoaded;
+            BarricadeManager.onModifySignRequested += OnModifySignRequested;
         }
+
         protected override void Unload()
         {
             Harmony harmony = new Harmony("com.mew.powerShenanigans");
@@ -87,17 +91,33 @@ namespace Wired
         }
 
 
-        private void OnPlayerDisconnected(Rocket.Unturned.Player.UnturnedPlayer player)
+        private void OnPlayerDisconnected(UnturnedPlayer player)
         {
             player.Player.gameObject.TryRemoveComponent<PlayerEvents>();
         }
 
-        private void OnPlayerConnected(Rocket.Unturned.Player.UnturnedPlayer player)
+        private void OnPlayerConnected(UnturnedPlayer player)
         {
             player.Player.gameObject.AddComponent<PlayerEvents>();
 
             ITransportConnection connection = player.Player.channel.owner.transportConnection;
             EffectManager.SendUIEffect(Resources.goggles_ui, Resources.GogglesUIKey, connection, true);
+        }
+
+        private void OnModifySignRequested(CSteamID instigator, InteractableSign sign, ref string text, ref bool shouldAllow)
+        {
+            if(sign.gameObject.TryGetComponent(out RemoteTransmitter rt))
+            {
+                rt.TrySetFrequency(text, PlayerTool.getPlayer(instigator));
+            }
+            else if(sign.gameObject.TryGetComponent(out RemoteReceiver rr))
+            {
+                rr.TrySetFrequency(text, PlayerTool.getPlayer(instigator));
+            }
+            else if (sign.gameObject.TryGetComponent(out TimerNode timer))
+            {
+                shouldAllow = false;
+            }
         }
 
         [HarmonyPatch(typeof(InteractableSpot), "ReceiveToggleRequest")]
@@ -110,10 +130,16 @@ namespace Wired
                 {
                     return true;
                 }
-                if (__instance.gameObject.TryGetComponent(out SwitchNode sw))
+
+                if (__instance.gameObject.TryGetComponent(out GateNode sw))
                 {
                     if (!sw.SwitchableByPlayer)
                     {
+                        if (__instance.gameObject.TryGetComponent(out Keypad kp))
+                        {
+                            OnKeypadInteractRequested?.Invoke(kp, player);
+                            return false;
+                        }
                         return false;
                     }
                     sw.Switch(desiredPowered);
@@ -143,7 +169,6 @@ namespace Wired
         [HarmonyPatch(typeof(InteractableGenerator), "askBurn")]
         public static class Property_Patch 
         {
-            [HarmonyPrefix]
             public static void Postfix(InteractableGenerator __instance, ushort amount)
             {
                 if(__instance.fuel - amount <= 0)
@@ -155,7 +180,6 @@ namespace Wired
         [HarmonyPatch(typeof(InteractableGenerator), "askFill")]
         public static class Property_Patch_Fill
         {
-            [HarmonyPrefix]
             public static void Postfix(InteractableGenerator __instance, ushort amount)
             {
                 OnGeneratorFuelUpdated?.Invoke(__instance, (ushort)(__instance.fuel + amount));
@@ -164,7 +188,6 @@ namespace Wired
         [HarmonyPatch(typeof(InteractableGenerator), "ReceivePowered")]
         public static class Property_Patch_ReceivePowered
         {
-            [HarmonyPrefix]
             public static void Postfix(InteractableGenerator __instance, bool newPowered)
             {
                 OnGeneratorPoweredChanged?.Invoke(__instance, newPowered);
@@ -216,5 +239,12 @@ namespace Wired
         //        return true;
         //    }
         //}
+    }
+
+    public enum RemoteSignalType
+    {
+        ON,
+        OFF,
+        TOGGLE
     }
 }
