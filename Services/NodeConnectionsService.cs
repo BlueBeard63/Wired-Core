@@ -46,12 +46,12 @@ namespace Wired.Services
                 if (isPowered && !gen.IsPowered)
                 {
                     gen.SetPowered(true);
-                    net.RecalculateFlow();
+                    net.RecalculatePower();
                 }
                 else if (!isPowered && gen.IsPowered)
                 {
                     gen.SetPowered(false);
-                    net.RecalculateFlow();
+                    net.RecalculatePower();
                 }
             }
         }
@@ -66,12 +66,12 @@ namespace Wired.Services
                 if (newAmount > 0 && !gen.IsPowered)
                 {
                     gen.SetPowered(true);
-                    net.RecalculateFlow();
+                    net.RecalculatePower();
                 }
                 else if (newAmount == 0 && gen.IsPowered)
                 {
                     gen.SetPowered(false);
-                    net.RecalculateFlow();
+                    net.RecalculatePower();
                 }
             }
         }
@@ -80,7 +80,7 @@ namespace Wired.Services
         {
             if(_nodeToNetwork.TryGetValue(timer, out ElectricNetwork net))
             {
-                net.RecalculateFlow();
+                net.RecalculatePower();
             }
         }
 
@@ -88,7 +88,7 @@ namespace Wired.Services
         {
             if (_nodeToNetwork.TryGetValue(sw, out ElectricNetwork net))
             {
-                net.RecalculateFlow();
+                net.RecalculatePower();
             }
         }
 
@@ -141,7 +141,7 @@ namespace Wired.Services
             else if (net1 == net2)
             {
                 net1.AddConnection(connection);
-                net1.RecalculateFlow();
+                net1.RecalculatePower();
             }
             else
             {
@@ -188,14 +188,14 @@ namespace Wired.Services
             RegisterNode(net, initialConnection.Node2);
             net.AddConnection(initialConnection);
 
-            net.RecalculateFlow();
+            net.RecalculatePower();
         }
 
         private void AddToNetwork(ElectricNetwork net, IElectricNode newNode, NodeConnection connection)
         {
             RegisterNode(net, newNode);
             net.AddConnection(connection);
-            net.RecalculateFlow();
+            net.RecalculatePower();
         }
 
         private void MergeNetworks(ElectricNetwork to, ElectricNetwork from, NodeConnection con)
@@ -214,7 +214,7 @@ namespace Wired.Services
 
             Networks.Remove(from);
 
-            to.RecalculateFlow();
+            to.RecalculatePower();
         }
 
         /// <summary>
@@ -276,7 +276,7 @@ namespace Wired.Services
                     }
                 }
 
-                newNet.RecalculateFlow();
+                newNet.RecalculatePower();
             }
         }
 
