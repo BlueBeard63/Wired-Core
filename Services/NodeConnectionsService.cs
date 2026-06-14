@@ -22,8 +22,11 @@ namespace Wired.Services
         public static event NodeConnectionEventHandler OnNodeConnected;
         public static event NodeConnectionEventHandler OnNodeDisconnected;
 
+        private static NodeConnectionsService Instance;
         public NodeConnectionsService() 
         {
+            Instance = this;
+
             _nodeToNetwork = new Dictionary<IElectricNode, ElectricNetwork>();
             Networks = new HashSet<ElectricNetwork>();
 
@@ -32,6 +35,14 @@ namespace Wired.Services
             Plugin.OnTimerExpired += OnTimerExpired;
             Plugin.OnGeneratorFuelUpdated += OnGeneratorFuelUpdated;
             Plugin.OnGeneratorPoweredChanged += OnGeneratorPoweredChanged;
+        }
+
+        public static void RecalculatePowerForNode(IElectricNode node)
+        {
+            if (Instance._nodeToNetwork.TryGetValue(node, out ElectricNetwork net))
+            {
+                net.RecalculatePower();
+            }
         }
 
         private void OnGeneratorPoweredChanged(InteractableGenerator generator, bool isPowered)

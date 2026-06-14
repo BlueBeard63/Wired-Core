@@ -55,8 +55,6 @@ namespace Wired.Wrappers
                 BarricadeManager.ServerSetSafezonePowered(_safezone, powered);
             if (_charge != null)
                 _charge.Detonate(UnturnedPlayer.FromCSteamID(new CSteamID(_charge.owner)).Player);
-            if(_wiredinteractable != null)
-                _wiredinteractable.SetPowered(true);
         }
     }
 }

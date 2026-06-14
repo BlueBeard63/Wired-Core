@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using Wired.Services;
 using Wired.WiredAssets;
 
 namespace Wired.Models
@@ -16,17 +17,32 @@ namespace Wired.Models
         public IWiredAsset Asset { get; set; }
         public float Consumption { get; } = 0;
         public bool AllowPowerThrough { get; } = true;
-        public float Supply { get; set; } = 1500;
-        private InteractableGenerator gen;
+        public float Supply { get; set; }
+
+
+        private Interactable _interactable;
         public void SetPowered(bool powered)
         {
             IsPowered = powered;
+
+            if(_interactable is InteractableSpot spot)
+            {
+                BarricadeManager.ServerSetSpotPowered(spot, powered);
+            }
         }
         private void Awake()
         {
             InstanceID = BarricadeManager.FindBarricadeByRootTransform(this.transform).instanceID;
-            gen = this.GetComponent<InteractableGenerator>();
-            IsPowered = gen.fuel > 0 && gen.isPowered;
+
+            if (this.TryGetComponent(out InteractableGenerator gen))
+            {
+                _interactable = gen;
+                IsPowered = gen.fuel > 0 && gen.isPowered;
+            }
+            if (this.TryGetComponent(out InteractableSpot spot))
+            {
+                _interactable = spot;
+            }
         }
     }
 }

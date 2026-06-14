@@ -32,11 +32,11 @@ namespace Wired.WiredInteractables
             ElectricNetwork.PowerUpdated -= PowerUpdated;
         }
 
-        private void PowerUpdated(ElectricNetwork obj)
+        private void PowerUpdated(ElectricNetwork obj, float time)
         {
             if (!IsOn)
                 return;
-            if (!obj.Nodes.Contains(this.GetComponent<ConsumerNode>())) // if the network updated is the one this thing is in
+            if (!obj.Nodes.Contains(this.GetComponent<ConsumerNode>())) // if the network updated isn't the one this thing is in
                 return;
 
             BarricadeManager.ServerSetSignText((InteractableSign)interactable, 

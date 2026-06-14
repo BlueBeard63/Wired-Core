@@ -42,7 +42,7 @@ namespace Wired
                 while ((line = reader.ReadLine()) != null)
                 {
                     line = line.Trim();
-                    foreach(var entry in entries)
+                    foreach (var entry in entries)
                     {
                         if (line.StartsWith(entry, StringComparison.OrdinalIgnoreCase))
                         {
@@ -93,8 +93,31 @@ namespace Wired
                     if (line.StartsWith(entry, StringComparison.OrdinalIgnoreCase))
                     {
                         value = line.Split(' ')[1];
-                        if(string.IsNullOrEmpty(value))
+                        if (string.IsNullOrEmpty(value))
                             return false;
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        public bool TryGetBool(string entry, out bool value)
+        {
+            value = false;
+            if (!File.Exists(_path))
+                return false;
+
+            using (var reader = File.OpenText(_path))
+            {
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    line = line.Trim();
+                    if (line.StartsWith(entry, StringComparison.OrdinalIgnoreCase))
+                    {
+                        value = bool.TryParse(line.Split(' ')[1], out bool result) && result;
                         return true;
                     }
                 }

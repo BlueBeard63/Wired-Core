@@ -18,8 +18,8 @@ namespace Wired.Services
 
         private List<IWiredAsset> _defaultAssets = new List<IWiredAsset>() // Vanilla assets, probly gotta put this in a config
         {
-            new SupplierAsset(new Guid("dc56734a150849e785975751364d41de"), 2800), // Industrial Generator
-            new SupplierAsset(new Guid("72fae83175f34bde94bd52d40c7a9ebc"), 400), // Portable Generator
+            new GeneratorAsset(new Guid("dc56734a150849e785975751364d41de"), 2800), // Industrial Generator
+            new GeneratorAsset(new Guid("72fae83175f34bde94bd52d40c7a9ebc"), 400), // Portable Generator
 
             new ConsumerAsset(new Guid("3407a91dde0c4454b91d5af072f11a4c"), 100), // Spotlight
             new ConsumerAsset(new Guid("9908a43237364f22a62242cd1fb14fc9"), 100), // Cagelight
@@ -147,7 +147,17 @@ namespace Wired.Services
         private void PopulateSupplier(AssetParser parser, ItemAsset asset)
         {
             var supply = parser.TryGetFloat("Power_Supply", out float supp) ? supp : 100f;
-            WiredAssets.Add(asset.GUID, new SupplierAsset(asset.GUID, supply));
+
+            if(parser.HasEntry("WiredBuild SolarPanel"))
+            {
+                var nightmodifier = parser.TryGetFloat("NightSupplyModifier", out float nmod) ? nmod : 0f;
+                var movingpartid = parser.TryGetFloat("MovingPart_ID", out float mpid) ? mpid : (ushort)0;
+                var movingpartminangle = parser.TryGetFloat("MovingPart_MaxAngle", out float mpmina) ? mpmina : 0f;
+                WiredAssets.Add(asset.GUID, new SolarPanelAsset(asset.GUID, supply, nightmodifier, movingpartminangle, (ushort)movingpartid));
+                return;
+            }
+
+            WiredAssets.Add(asset.GUID, new GeneratorAsset(asset.GUID, supply));
         }
         private bool IsConsumer(Transform model)
         {

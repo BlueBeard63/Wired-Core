@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace Wired.WiredAssets
 {
-    public class SupplierAsset : IWiredAsset
+    public class GeneratorAsset : IWiredAsset
     {
         public Guid GUID { get; }
         public float Supply { get; set; }
-        public SupplierAsset(Guid guid, float supply)
+        public GeneratorAsset(Guid guid, float supply)
         {
             GUID = guid;
             Supply = supply;

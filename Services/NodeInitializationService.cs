@@ -47,6 +47,12 @@ namespace Wired.Services
 
         private void TryInitializeBarricade(BarricadeDrop barricade)
         {
+            AssetParser assetParser = new AssetParser(barricade.asset.getFilePath());
+            if (assetParser.TryGetBool("Wired_Create_Node", out bool value))
+            {
+                if (!value) return;
+            }
+
             if (_assets.WiredAssets.TryGetValue(barricade.asset.GUID, out IWiredAsset wiredAsset))
             {
                 InitFromAsset(barricade, wiredAsset);
@@ -59,7 +65,6 @@ namespace Wired.Services
         private void InitFromAsset(BarricadeDrop barricade, IWiredAsset asset)
         {
             IElectricNode createdNode = null;
-
             switch (asset)
             {
                 case SwitchAsset switchAsset:
@@ -95,11 +100,54 @@ namespace Wired.Services
                     createdNode = timer;
                     break;
 
-                case SupplierAsset supplierAsset:
+                case GeneratorAsset supplierAsset:
                     var sup = barricade.model.gameObject.AddComponent<SupplierNode>();
                     sup.Asset = supplierAsset;
                     sup.Supply = supplierAsset.Supply;
                     createdNode = sup;
+                    break;
+
+                case SolarPanelAsset solarPanelAsset:
+                    var supplier = barricade.model.gameObject.AddComponent<SupplierNode>();
+                    var solar = barricade.model.gameObject.AddComponent<SolarPanel>();
+                    solar.Asset = solarPanelAsset;
+                    supplier.Asset = solarPanelAsset;
+                    if (solarPanelAsset.HasMovingPart)
+                    {
+                        Console.WriteLine($"Has moving part");
+                        var movingPartGameObj = supplier.transform.Find("MovingPart");
+                        if (movingPartGameObj == null)
+                        {
+                            WiredLogger.Error($"MovingPart transform of \"{barricade.asset.FriendlyName}\" is missing.");
+                            return;
+                        }
+
+                        var bar = new Barricade(Assets.find(EAssetType.ITEM, solarPanelAsset.MovingPartId) as ItemBarricadeAsset);
+                        if(bar == null)
+                        {
+                            WiredLogger.Error($"Couldn't find barricade asset for MovingPart of \"{barricade.asset.FriendlyName}\".");
+                            return;
+                        }
+
+                        Transform movingPartTransform = BarricadeManager.dropNonPlantedBarricade(
+                            bar,
+                            movingPartGameObj.position,
+                            barricade.model.rotation,
+                            barricade.GetServersideData().owner,
+                            barricade.GetServersideData().group
+                        );
+                        Console.WriteLine($"Moving part created at {movingPartTransform.position}, root position: {barricade.model.position}");
+
+                        solar.MovingPart = movingPartTransform;
+                        solar.PanelNormal = movingPartTransform.up;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"No moving part");
+
+
+                    }
+                    createdNode = supplier;
                     break;
 
                 case ConsumerAsset consumerAsset:

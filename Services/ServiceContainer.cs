@@ -17,6 +17,7 @@ namespace Wired.Services
         public PlayerViewService PlayerViewService { get; private set; }
         public KeypadUIService KeypadUIService { get; private set; }
         public JsonService JsonService { get; set; }
+        public WiredDeltaService WiredDeltaService { get; set; }
         public ServiceContainer(Resources resources)
         {
             WiredAssetsService = new WiredAssetsService();
@@ -28,6 +29,7 @@ namespace Wired.Services
             KeypadUIService = new KeypadUIService();
             JsonService = new JsonService(NodeConnectionsService, Path.Combine(Plugin.Instance.Directory, "Nodes.json"));
             JsonService.LoadFromJson();
+            WiredDeltaService = new GameObject("WiredDeltaService").AddComponent<WiredDeltaService>();
         }
     }
 }

@@ -1,5 +1,8 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Net;
+using System.Reflection;
 using HarmonyLib;
+using Rocket.API;
 using Rocket.API.Extensions;
 using Rocket.Core.Plugins;
 using Rocket.Unturned;
@@ -17,6 +20,8 @@ namespace Wired
     public class Plugin : RocketPlugin<Config>
     {
         public static Plugin Instance;
+
+        private bool _levelLoaded;
 
         public Resources Resources;
 
@@ -48,9 +53,15 @@ namespace Wired
         public delegate void KeypadInteracted(Keypad keypad, Player player);
         public static event KeypadInteracted OnKeypadInteractRequested;
 
+        public delegate void TimeOfDayUpdated(uint timeOfDay, float timefraction);
+        public static event TimeOfDayUpdated OnTimeOfDayUpdated;
+
         protected override void Load()
         {
             Instance = this;
+
+            ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => true;
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
 
             Harmony harmony = new Harmony("com.mew.powerShenanigans");
             harmony.PatchAll();
@@ -67,6 +78,10 @@ namespace Wired
 
         protected override void Unload()
         {
+            ServicePointManager.ServerCertificateValidationCallback -= (sender, certificate, chain, sslPolicyErrors) => true;
+
+            Services.WiredDeltaService.Disconnect(new ConsolePlayer());
+
             Harmony harmony = new Harmony("com.mew.powerShenanigans");
             harmony.UnpatchAll("com.mew.powerShenanigans");
 
@@ -86,10 +101,22 @@ namespace Wired
             }
 
             WiredLogger.PluginLoaded(true);
+            _levelLoaded = true;
             Resources = new Resources();
             Services = new ServiceContainer(Resources);
         }
 
+        private uint time = 0;
+        private void Update()
+        {
+            if (!_levelLoaded) return;
+            if (LightingManager.time == time) return;
+
+            time = LightingManager.time;
+            OnTimeOfDayUpdated?.Invoke(LightingManager.time, (float)LightingManager.time / (float)LightingManager.cycle);
+
+            return;
+        }
 
         private void OnPlayerDisconnected(UnturnedPlayer player)
         {

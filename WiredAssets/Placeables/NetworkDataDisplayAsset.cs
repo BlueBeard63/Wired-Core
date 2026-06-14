@@ -10,8 +10,6 @@ namespace Wired.WiredAssets
     {
         public Guid GUID { get; private set; }
 
-        public WiredAssetType Type { get; } = WiredAssetType.Consumer;
-
         public float Consumption;
         public NetworkDataDisplayAsset(Guid guid)
         {

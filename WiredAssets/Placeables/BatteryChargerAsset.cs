@@ -9,8 +9,6 @@ namespace Wired.WiredAssets
     internal class BatteryChargerAsset : IWiredAsset
     {
         public Guid GUID { get; set; }
-
-        public WiredAssetType Type { get; } = WiredAssetType.Consumer;
         public float ChargePerHour { get; set; }
 
         public BatteryChargerAsset(Guid guid, float chargePerHour)
