@@ -49,19 +49,9 @@ namespace Wired.Services
 
             if (!gun.isAiming) return;
 
-            if(!_selectedPath.TryGetValue(gun.player.channel.owner.playerID.steamID, out List<Vector3> list))
-                _selectedPath[gun.player.channel.owner.playerID.steamID] = new List<Vector3>();
-
-            if (list != null && list.Count > 0)
-            {
-                list.RemoveAt(list.Count - 1);
-            }
-            else
-            {
-                var uplayer = UnturnedPlayer.FromPlayer(gun.player);
-                ClearSelection(uplayer);
-                OnNodeSelectionClearRequested?.Invoke(uplayer);
-            }
+            var uplayer = UnturnedPlayer.FromPlayer(gun.player);
+            ClearSelection(uplayer);
+            OnNodeSelectionClearRequested?.Invoke(uplayer);
         }
 
         private void OnBulletSpawned(UseableGun gun, BulletInfo bullet)
@@ -79,16 +69,6 @@ namespace Wired.Services
             {
                 TrySelectNode(player, raycast, drop);
                 return;
-            }
-            var ground = raycast.GetPoint();
-            if(ground != null)
-            {
-                if (!_selectedPath.ContainsKey(player.CSteamID))
-                {
-                    _selectedPath[player.CSteamID] = new List<Vector3>() { ground };
-                    return;
-                }
-                _selectedPath[player.CSteamID].Add(ground);
             }
         }
 
@@ -134,9 +114,10 @@ namespace Wired.Services
             }
 
             var distance = Math.Round(Vector3.Distance(node1.position, node2.position), 1);
-            if (distance > 25)
+            if (distance > 10)
             {
-                player.Player.ServerShowHint($"The components are too far apart! ({distance} > 25)", 5f);
+                player.Player.ServerShowHint($"The components are too far apart! ({distance} > 10)", 5f);
+                return;
             }
 
             var electricnode1 = node1.GetComponent<IElectricNode>();

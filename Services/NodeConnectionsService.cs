@@ -17,7 +17,6 @@ namespace Wired.Services
         private readonly Dictionary<IElectricNode, ElectricNetwork> _nodeToNetwork;
         public HashSet<ElectricNetwork> Networks { get; private set; }
 
-
         public delegate void NodeConnectionEventHandler(UnturnedPlayer player, NodeConnection connection);
         public static event NodeConnectionEventHandler OnNodeConnected;
         public static event NodeConnectionEventHandler OnNodeDisconnected;

@@ -74,6 +74,13 @@ namespace Wired.Services
                     sw.SwitchableByPlayer = true;
                     createdNode = sw;
                     break;
+                
+                case ConnectorAsset connectorAsset:
+                    var cn = barricade.model.gameObject.AddComponent<GateNode>();
+                    cn.Asset = connectorAsset;
+                    cn.Switch(true);
+                    createdNode = cn;
+                    break;
 
                 case PlayerDetectorAsset detectorAsset:
                     createdNode = InitializePlayerDetector(barricade, detectorAsset);

@@ -10,11 +10,6 @@ namespace Wired.Utilities
     {
         public static void Info(string message)
         {
-            return;
-            Console.WriteLine($"[Wired]: {message}");
-        }
-        public static void Log(string message)
-        {
             Console.WriteLine($"[Wired]: {message}");
         }
         public static void Warn(string message)
@@ -30,7 +25,7 @@ namespace Wired.Utilities
             Console.ResetColor();
         }
 
-        public static void PluginLoaded(bool success)
+        public static void LogPluginLoaded(bool success)
         {
             if (success)
             {

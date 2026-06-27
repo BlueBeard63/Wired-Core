@@ -9,6 +9,9 @@ using Rocket.Core.Steam;
 using Wired.WiredAssets;
 using Wired.Utilities;
 using System.Linq;
+using System.Reflection;
+using Rocket.Unturned.Commands;
+using Rocket.Unturned;
 
 namespace Wired.Services
 {
@@ -31,10 +34,18 @@ namespace Wired.Services
             PlayerEvents.OnEquipRequested += OnEquipRequested;
             PlayerEquipment.OnUseableChanged_Global += PlayerEquipment_OnUseableChanged_Global;
             PlayerClothing.OnGlassesChanged_Global += OnGlassesChanged_Global;
+
+            U.Events.OnPlayerConnected += OnPlayerConnected;
+            
             _assets = assets;
             _resources = resources;
             _ncs = ncs;
             _selectedNode = selectedNode;
+        }
+
+        private void OnPlayerConnected(UnturnedPlayer player)
+        {
+            UpdateWires();
         }
 
         private void OnGlassesChanged_Global(PlayerClothing obj)
@@ -69,6 +80,7 @@ namespace Wired.Services
         private void OnNodeDisconnected(UnturnedPlayer player, NodeConnection connection)
         {
             UpdateNodesView(player.CSteamID);
+            UpdateWires();
             ClearPreviewView(player.CSteamID);
             _lookingAt[player.CSteamID] = 0;
             _playersInLinkingMode.Remove(player);
@@ -77,6 +89,7 @@ namespace Wired.Services
         private void OnNodeConnected(UnturnedPlayer player, NodeConnection connection)
         {
             UpdateNodesView(player.CSteamID);
+            UpdateWires();
             ClearPreviewView(player.CSteamID);
             _lookingAt[player.CSteamID] = 0;
             _playersInLinkingMode.Remove(player);
@@ -285,6 +298,126 @@ namespace Wired.Services
                 TracePath(player, start, end, pathEffect);
             }
         }
+
+        private void UpdateWires()
+        {
+            EffectManager.ClearEffectByGuid_AllPlayers(_resources.wire_2m.GUID);
+            EffectManager.ClearEffectByGuid_AllPlayers(_resources.wire_4m.GUID);
+            EffectManager.ClearEffectByGuid_AllPlayers(_resources.wire_6m.GUID);
+            EffectManager.ClearEffectByGuid_AllPlayers(_resources.wire_8m.GUID);
+
+            HashSet<NodeConnection> visited = new HashSet<NodeConnection>();
+
+            int i = 0;
+
+            foreach(var con in _ncs.GetAllConnections())
+            {
+                if(visited.Contains(con)) continue;
+                visited.Add(con);
+
+                i++;
+
+                EffectAsset wire = _resources.wire_8m;
+                float scalemodifier = 1f/8f;
+                var distance = Vector3.Distance(con.Node1.WireConnectPoint.position, con.Node2.WireConnectPoint.position);
+                if (distance <= 0.5) return;
+
+                if (distance <= 10 && distance > 6)
+                {
+                    wire = _resources.wire_8m;
+                    scalemodifier = 1f / 8f;
+                }
+                else if (distance <= 6 && distance > 4)
+                {
+                    wire = _resources.wire_6m;
+                    scalemodifier = 1f / 6f;
+                }
+                else if (distance <= 4 && distance > 2)
+                {
+                    wire = _resources.wire_4m;
+                    scalemodifier = 1f / 4f;
+                }
+                else
+                {
+                    wire = _resources.wire_2m;
+                    scalemodifier = 1f / 2f;
+                }
+
+                Vector3 direction = (con.Node2.WireConnectPoint.position - con.Node1.WireConnectPoint.position).normalized;
+
+                TriggerEffectParameters effect = new TriggerEffectParameters
+                {
+                    asset = wire,
+                    position = con.Node1.WireConnectPoint.position,
+                    relevantDistance = 64f,
+                    shouldReplicate = true,
+                    reliable = true,
+                    scale = new Vector3(1f, 1f, distance * scalemodifier)
+                };
+                effect.SetDirection(direction);
+                EffectManager.triggerEffect(effect);
+            }
+            WiredLogger.Info($"Displayed {i} wires.");
+        }
+        private void UpdateWires(UnturnedPlayer player)
+        {
+            EffectManager.ClearEffectByGuid(_resources.wire_2m.GUID, player.Player.channel.owner.transportConnection);
+            EffectManager.ClearEffectByGuid(_resources.wire_4m.GUID, player.Player.channel.owner.transportConnection);
+            EffectManager.ClearEffectByGuid(_resources.wire_6m.GUID, player.Player.channel.owner.transportConnection);
+            EffectManager.ClearEffectByGuid(_resources.wire_8m.GUID, player.Player.channel.owner.transportConnection);
+
+            HashSet<NodeConnection> visited = new HashSet<NodeConnection>();
+
+            int i = 0;
+
+            foreach (var con in _ncs.GetAllConnections())
+            {
+                if (visited.Contains(con)) continue;
+                visited.Add(con);
+
+                i++;
+
+                EffectAsset wire = _resources.wire_8m;
+                float scalemodifier = 1f / 8f;
+                var distance = Vector3.Distance(con.Node1.WireConnectPoint.position, con.Node2.WireConnectPoint.position);
+                if (distance <= 10 && distance > 6)
+                {
+                    wire = _resources.wire_8m;
+                    scalemodifier = 1f / 8f;
+                }
+                else if (distance <= 6 && distance > 4)
+                {
+                    wire = _resources.wire_6m;
+                    scalemodifier = 1f / 6f;
+                }
+                else if (distance <= 4 && distance > 2)
+                {
+                    wire = _resources.wire_4m;
+                    scalemodifier = 1f / 4f;
+                }
+                else
+                {
+                    wire = _resources.wire_2m;
+                    scalemodifier = 1f / 2f;
+                }
+
+                Vector3 direction = (con.Node2.WireConnectPoint.position - con.Node1.WireConnectPoint.position).normalized;
+
+                TriggerEffectParameters effect = new TriggerEffectParameters
+                {
+                    asset = wire,
+                    position = con.Node1.WireConnectPoint.position,
+                    relevantDistance = 64f,
+                    shouldReplicate = true,
+                    reliable = true,
+                    scale = new Vector3(1f, 1f, distance * scalemodifier)
+                };
+                effect.SetDirection(direction);
+                EffectManager.triggerEffect(effect);
+            }
+            WiredLogger.Info($"Displayed {i} wires.");
+        }
+
         private void UpdateGogglesView(CSteamID steamid, BarricadeDrop drop)
         {
             if(!drop.model.TryGetComponent(out IElectricNode node))

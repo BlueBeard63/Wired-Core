@@ -16,7 +16,7 @@ namespace Wired.Models
         public float Consumption { get; set; }
         public ushort DelaySeconds { get; set; }
         public bool AllowPowerThrough { get; private set; }
-        public Vector3 WireConnectPoint { get; set; }
+        public Transform WireConnectPoint { get; set; }
 
         private bool _isCountingDown;
 
@@ -42,7 +42,8 @@ namespace Wired.Models
             InstanceID = BarricadeManager.FindBarricadeByRootTransform(this.transform).instanceID;
 
             var p = transform.Find("WireConnectPoint");
-            if( p != null) WireConnectPoint = p.position;
+            if( p != null) WireConnectPoint = p;
+            else WireConnectPoint = this.transform;
         }
         public void StartTimer()
         {

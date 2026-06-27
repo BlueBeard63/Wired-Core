@@ -11,7 +11,7 @@ namespace Wired.Models
         bool IsPowered { get; }
         float Consumption { get; }
         bool AllowPowerThrough { get; }
-        Vector3 WireConnectPoint { get; }
+        Transform WireConnectPoint { get; }
         void SetPowered(bool powered);
     }
 }

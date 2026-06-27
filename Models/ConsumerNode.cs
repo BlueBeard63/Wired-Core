@@ -13,7 +13,7 @@ namespace Wired.Models
         public bool IsPowered { get; set; } = true;
         public float Consumption { get; set; }
         public bool AllowPowerThrough { get; set; } = true;
-        public Vector3 WireConnectPoint { get; set; }
+        public Transform WireConnectPoint { get; set; }
 
         private ConsumerInteractable Interactable;
         public void SetPowered(bool powered)
@@ -27,7 +27,8 @@ namespace Wired.Models
             Interactable = new ConsumerInteractable(this.transform);
 
             var p = transform.Find("WireConnectPoint");
-            if (p != null) WireConnectPoint = p.position;
+            if (p != null) WireConnectPoint = p;
+            else WireConnectPoint = this.transform;
         }
     }
 }

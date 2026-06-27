@@ -69,11 +69,20 @@ namespace Wired.WiredInteractables
 
             var newsupply = Asset.Supply * efficiency;
             _supplierNode.Supply = newsupply;
+            if(newsupply <= 0f && _supplierNode.IsPowered)
+            {
+                _supplierNode.SetPowered(false);
+            }
+            else if(newsupply > 0f && !_supplierNode.IsPowered)
+            {
+                _supplierNode.SetPowered(true);
+            }
+
             NodeConnectionsService.RecalculatePowerForNode(_supplierNode);
 
             if (MovingPart == null) return;
 
-            WiredLogger.Info($"Current supply: {_supplierNode.Supply}");
+            // WiredLogger.Info($"Current supply: {_supplierNode.Supply}");
         }
 
         private float GetSolarPanelEfficiency(float sunangle)
@@ -88,7 +97,7 @@ namespace Wired.WiredInteractables
 
             float dot = Vector3.Dot(PanelNormal, sunDirection.normalized);
 
-            WiredLogger.Info($"Efficiency: {Mathf.Max(0f, dot)}, PanelNormal direction: {PanelNormal}, sunDirection: {sunDirection}");
+            // WiredLogger.Info($"Efficiency: {Mathf.Max(0f, dot)}, PanelNormal direction: {PanelNormal}, sunDirection: {sunDirection}");
 
             return Mathf.Max(0f, dot);
         }

@@ -122,6 +122,12 @@ namespace Wired.Services
                 guid: asset.GUID,
                 staysOpenSeconds: parser.TryGetFloat("StaysOpenSeconds", out float seconds) ? seconds : 3));
             }
+            else if (parser.HasEntry("WiredBuild Connector"))
+            {
+                WiredAssets.Add(asset.GUID,
+                    new ConnectorAsset(
+                    guid: asset.GUID));
+            }
         }
         private void PopulateConsumer(AssetParser parser, ItemAsset asset)
         {
@@ -141,6 +147,7 @@ namespace Wired.Services
             {
                 var chargerate = parser.TryGetFloat("BatteryCharger_ChargePerHour", out float cpr) ? cpr : 100f;
                 WiredAssets.Add(asset.GUID, new BatteryChargerAsset(asset.GUID, chargerate));
+                return;
             }
             WiredAssets.Add(asset.GUID, new ConsumerAsset(asset.GUID, consumption));
         }

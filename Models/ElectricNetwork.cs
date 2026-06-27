@@ -13,6 +13,7 @@ namespace Wired.Models
         public HashSet<IElectricNode> Nodes { get; private set; } = new HashSet<IElectricNode>();
         public HashSet<NodeConnection> Connections { get; private set; } = new HashSet<NodeConnection>();
 
+
         public float TotalSupply { get; private set; }
         public float TotalConsumption { get; private set; }
 

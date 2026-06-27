@@ -95,12 +95,12 @@ namespace Wired
         {
             if (!Provider.getServerWorkshopFileIDs().Contains(3583223837))
             {
-                WiredLogger.PluginLoaded(false);
+                WiredLogger.LogPluginLoaded(false);
                 Instance.UnloadPlugin();
                 return;
             }
 
-            WiredLogger.PluginLoaded(true);
+            WiredLogger.LogPluginLoaded(true);
             _levelLoaded = true;
             Resources = new Resources();
             Services = new ServiceContainer(Resources);
