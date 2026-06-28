@@ -10,6 +10,7 @@ using Rocket.Unturned.Player;
 using SDG.NetTransport;
 using SDG.Unturned;
 using Steamworks;
+using UnityEngine;
 using Wired.Models;
 using Wired.Services;
 using Wired.Utilities;
@@ -225,6 +226,19 @@ namespace Wired
             public static void Postfix(InteractableGenerator __instance, bool newPowered)
             {
                 OnGeneratorPoweredChanged?.Invoke(__instance, newPowered);
+            }
+        }
+        [HarmonyPatch(typeof(BarricadeManager))]
+        [HarmonyPatch("destroyBarricade", typeof(BarricadeDrop), typeof(byte), typeof(byte), typeof(ushort))]
+        public static class Patch_BarricadeManager_destroyBarricade
+        {
+            public static bool Prefix(BarricadeManager __instance, BarricadeDrop barricade, byte x, byte y, ushort plant)
+            {
+                if(barricade.model.TryGetComponent(out IElectricNode node))
+                {
+                    Plugin.Instance.Services.NodeConnectionsService.NodeDestroyed(node);
+                }
+                return true;
             }
         }
 

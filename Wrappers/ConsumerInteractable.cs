@@ -31,6 +31,7 @@ namespace Wired.Wrappers
             {
                 _wiredInteractable.SetPowered(powered);
                 WiredLogger.Info($"Set wired interactable {(_wiredInteractable.interactable != null ? _wiredInteractable.interactable.name : "null")} to {(powered ? "ON" : "OFF")}");
+                return;
             }
             if (_spot != null)
             {
@@ -46,6 +47,7 @@ namespace Wired.Wrappers
                         BarricadeManager.ServerSetGeneratorPowered(gen.GetComponent<InteractableGenerator>(), true);
                     }
                 }
+                return;
             }
             if (_oven != null)
                 BarricadeManager.ServerSetOvenLit(_oven, powered);
@@ -53,8 +55,12 @@ namespace Wired.Wrappers
                 BarricadeManager.ServerSetOxygenatorPowered(_oxygenator, powered);
             if (_safezone != null)
                 BarricadeManager.ServerSetSafezonePowered(_safezone, powered);
-            if (_charge != null)
-                _charge.Detonate(UnturnedPlayer.FromCSteamID(new CSteamID(_charge.owner)).Player);
+            if (_charge != null && powered == true)
+                _charge.Detonate(null);
+        }
+        public void Uninitialize()
+        {
+            _wiredInteractable?.Uninitialize();
         }
     }
 }

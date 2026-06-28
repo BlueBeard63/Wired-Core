@@ -4,14 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Wired.WiredAssets
+namespace Wired.WiredAssets;
+
+public class EngineerGogglesAsset : IWiredAsset
 {
-    public class EngineerGogglesAsset : IWiredAsset
+    public Guid GUID { get; }
+    public EngineerGogglesAsset(Guid guid)
     {
-        public Guid GUID { get; }
-        public EngineerGogglesAsset(Guid guid)
-        {
-            GUID = guid;
-        }
+        GUID = guid;
     }
 }

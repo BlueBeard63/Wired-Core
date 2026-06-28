@@ -36,6 +36,16 @@ namespace Wired.Services
             Plugin.OnGeneratorPoweredChanged += OnGeneratorPoweredChanged;
         }
 
+        public void NodeDestroyed(IElectricNode node)
+        {
+            foreach (var n in GetAllConnections().Where(con => con.Node1 == node || con.Node2 == node))
+            {
+                DisconnectNodes(null, n);
+
+                node.Uninitialize();
+            }
+        }
+
         public static void RecalculatePowerForNode(IElectricNode node)
         {
             if (Instance._nodeToNetwork.TryGetValue(node, out ElectricNetwork net))

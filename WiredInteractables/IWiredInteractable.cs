@@ -5,12 +5,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Wired.WiredInteractables
+namespace Wired.WiredInteractables;
+
+public interface IWiredInteractable
 {
-    public interface IWiredInteractable
-    {
-        Interactable interactable { get; }
-        bool IsOn { get; }
-        void SetPowered(bool state);
-    }
+    Interactable interactable { get; }
+    bool IsOn { get; }
+    void SetPowered(bool state);
+    void Uninitialize();
 }

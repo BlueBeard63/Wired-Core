@@ -30,5 +30,11 @@ namespace Wired.Models
             if (p != null) WireConnectPoint = p;
             else WireConnectPoint = this.transform;
         }
+
+        public void Uninitialize()
+        {
+            Interactable?.Uninitialize();
+            Destroy(this);
+        }
     }
 }

@@ -31,6 +31,10 @@ namespace Wired.Models
 
             Plugin.Instance.SendSwitchToggled(this, state);
         }
+        public void Uninitialize()
+        {
+            Destroy(this);
+        }
         private void Awake()
         {
             _spot = GetComponent<InteractableSpot>();

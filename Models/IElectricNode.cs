@@ -13,5 +13,6 @@ namespace Wired.Models
         bool AllowPowerThrough { get; }
         Transform WireConnectPoint { get; }
         void SetPowered(bool powered);
+        void Uninitialize();
     }
 }

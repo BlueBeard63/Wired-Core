@@ -13,520 +13,521 @@ using System.Reflection;
 using Rocket.Unturned.Commands;
 using Rocket.Unturned;
 
-namespace Wired.Services
+namespace Wired.Services;
+
+public class PlayerViewService : MonoBehaviour
 {
-    public class PlayerViewService : MonoBehaviour
+    private WiredAssetsService _assets;
+    private Resources _resources;
+    private NodeConnectionsService _ncs;
+    private Dictionary<CSteamID, Transform> _selectedNode;
+    private Dictionary<CSteamID, uint> _lookingAt = new Dictionary<CSteamID, uint>();
+    private readonly HashSet<UnturnedPlayer> _playersInLinkingMode = new HashSet<UnturnedPlayer>();
+    private readonly HashSet<UnturnedPlayer> _playersWithGogglesOn = new HashSet<UnturnedPlayer>();
+    public void Init(WiredAssetsService assets, Resources resources, NodeConnectionsService ncs, Dictionary<CSteamID, Transform> selectedNode)
     {
-        private WiredAssetsService _assets;
-        private Resources _resources;
-        private NodeConnectionsService _ncs;
-        private Dictionary<CSteamID, Transform> _selectedNode;
-        private Dictionary<CSteamID, uint> _lookingAt = new Dictionary<CSteamID, uint>();
-        private readonly HashSet<UnturnedPlayer> _playersInLinkingMode = new HashSet<UnturnedPlayer>();
-        private readonly HashSet<UnturnedPlayer> _playersWithGogglesOn = new HashSet<UnturnedPlayer>();
-        public void Init(WiredAssetsService assets, Resources resources, NodeConnectionsService ncs, Dictionary<CSteamID, Transform> selectedNode)
-        {
-            WiringToolService.OnNodeSelected += OnNodeSelected;
-            WiringToolService.OnNodeSelectionClearRequested += OnNodeSelectionCleared;
-            NodeConnectionsService.OnNodeConnected += OnNodeConnected;
-            NodeConnectionsService.OnNodeDisconnected += OnNodeDisconnected;
-            PlayerEvents.OnDequipRequested += OnDequipRequested;
-            PlayerEvents.OnEquipRequested += OnEquipRequested;
-            PlayerEquipment.OnUseableChanged_Global += PlayerEquipment_OnUseableChanged_Global;
-            PlayerClothing.OnGlassesChanged_Global += OnGlassesChanged_Global;
+        WiringToolService.OnNodeSelected += OnNodeSelected;
+        WiringToolService.OnNodeSelectionClearRequested += OnNodeSelectionCleared;
+        NodeConnectionsService.OnNodeConnected += OnNodeConnected;
+        NodeConnectionsService.OnNodeDisconnected += OnNodeDisconnected;
+        PlayerEvents.OnDequipRequested += OnDequipRequested;
+        PlayerEvents.OnEquipRequested += OnEquipRequested;
+        PlayerEquipment.OnUseableChanged_Global += PlayerEquipment_OnUseableChanged_Global;
+        PlayerClothing.OnGlassesChanged_Global += OnGlassesChanged_Global;
 
-            U.Events.OnPlayerConnected += OnPlayerConnected;
-            
-            _assets = assets;
-            _resources = resources;
-            _ncs = ncs;
-            _selectedNode = selectedNode;
-        }
+        U.Events.OnPlayerConnected += OnPlayerConnected;
+        
+        _assets = assets;
+        _resources = resources;
+        _ncs = ncs;
+        _selectedNode = selectedNode;
+    }
 
-        private void OnPlayerConnected(UnturnedPlayer player)
-        {
-            UpdateWires();
-        }
+    private void OnPlayerConnected(UnturnedPlayer player)
+    {
+        UpdateWires();
+    }
 
-        private void OnGlassesChanged_Global(PlayerClothing obj)
+    private void OnGlassesChanged_Global(PlayerClothing obj)
+    {
+        WiredLogger.Info($"Player {obj.player.channel.owner.playerID.steamID} changed glasses.");
+        if (_playersWithGogglesOn.Contains(UnturnedPlayer.FromPlayer(obj.player)))
         {
-            WiredLogger.Info($"Player {obj.player.channel.owner.playerID.steamID} changed glasses.");
-            if (_playersWithGogglesOn.Contains(UnturnedPlayer.FromPlayer(obj.player)))
-            {
-                if(obj.glassesAsset == null)
-                {
-                    _playersWithGogglesOn.Remove(UnturnedPlayer.FromPlayer(obj.player));
-                    ClearGogglesView(obj.player.channel.owner.playerID.steamID);
-                    return;
-                }
-                if(!_assets.WiredAssets.ContainsKey(obj.glassesAsset.GUID) || !(_assets.WiredAssets[obj.glassesAsset.GUID] is EngineerGogglesAsset))
-                {
-                    _playersWithGogglesOn.Remove(UnturnedPlayer.FromPlayer(obj.player));
-                    ClearGogglesView(obj.player.channel.owner.playerID.steamID);
-                    return;
-                }
-            }
             if(obj.glassesAsset == null)
             {
+                _playersWithGogglesOn.Remove(UnturnedPlayer.FromPlayer(obj.player));
+                ClearGogglesView(obj.player.channel.owner.playerID.steamID);
                 return;
             }
-            if (_assets.WiredAssets.ContainsKey(obj.glassesAsset.GUID) && !(_assets.WiredAssets[obj.glassesAsset.GUID] is EngineerGogglesAsset))
+            if(!_assets.WiredAssets.ContainsKey(obj.glassesAsset.GUID) || _assets.WiredAssets[obj.glassesAsset.GUID] is not EngineerGogglesAsset)
             {
-                _playersWithGogglesOn.Add(UnturnedPlayer.FromPlayer(obj.player));
-                WiredLogger.Info($"Player {obj.player.channel.owner.playerID.steamID} has Wired Engineer Goggles on.");
-            }
-        }
-
-        private void OnNodeDisconnected(UnturnedPlayer player, NodeConnection connection)
-        {
-            UpdateNodesView(player.CSteamID);
-            UpdateWires();
-            ClearPreviewView(player.CSteamID);
-            _lookingAt[player.CSteamID] = 0;
-            _playersInLinkingMode.Remove(player);
-        }
-
-        private void OnNodeConnected(UnturnedPlayer player, NodeConnection connection)
-        {
-            UpdateNodesView(player.CSteamID);
-            UpdateWires();
-            ClearPreviewView(player.CSteamID);
-            _lookingAt[player.CSteamID] = 0;
-            _playersInLinkingMode.Remove(player);
-        }
-
-        private void PlayerEquipment_OnUseableChanged_Global(PlayerEquipment obj)
-        {
-            var asset = obj.asset;
-            if (asset == null)
+                _playersWithGogglesOn.Remove(UnturnedPlayer.FromPlayer(obj.player));
+                ClearGogglesView(obj.player.channel.owner.playerID.steamID);
                 return;
-
-
-            if (_assets.WiredAssets.ContainsKey(asset.GUID) && _assets.WiredAssets[asset.GUID] is WiringToolAsset)
-            {
-                UpdateNodesView(obj.player.channel.owner.playerID.steamID);
             }
         }
-
-        private void OnEquipRequested(Player player, ItemAsset asset, ref bool shouldAllow)
+        if(obj.glassesAsset == null)
         {
-            if (_assets.WiredAssets.ContainsKey(asset.GUID) && _assets.WiredAssets[asset.GUID] is WiringToolAsset)
+            return;
+        }
+        if (_assets.WiredAssets.ContainsKey(obj.glassesAsset.GUID) && (_assets.WiredAssets[obj.glassesAsset.GUID] is not EngineerGogglesAsset))
+        {
+            _playersWithGogglesOn.Add(UnturnedPlayer.FromPlayer(obj.player));
+            WiredLogger.Info($"Player {obj.player.channel.owner.playerID.steamID} has Wired Engineer Goggles on.");
+        }
+    }
+
+    private void OnNodeDisconnected(UnturnedPlayer player, NodeConnection connection)
+    {
+        UpdateWires();
+        if (player == null) return;
+
+        UpdateNodesView(player.CSteamID);
+        ClearPreviewView(player.CSteamID);
+        _lookingAt[player.CSteamID] = 0;
+        _playersInLinkingMode.Remove(player);
+    }
+
+    private void OnNodeConnected(UnturnedPlayer player, NodeConnection connection)
+    {
+        UpdateNodesView(player.CSteamID);
+        UpdateWires();
+        ClearPreviewView(player.CSteamID);
+        _lookingAt[player.CSteamID] = 0;
+        _playersInLinkingMode.Remove(player);
+    }
+
+    private void PlayerEquipment_OnUseableChanged_Global(PlayerEquipment obj)
+    {
+        var asset = obj.asset;
+        if (asset == null)
+            return;
+
+
+        if (_assets.WiredAssets.ContainsKey(asset.GUID) && _assets.WiredAssets[asset.GUID] is WiringToolAsset)
+        {
+            UpdateNodesView(obj.player.channel.owner.playerID.steamID);
+        }
+    }
+
+    private void OnEquipRequested(Player player, ItemAsset asset, ref bool shouldAllow)
+    {
+        if (_assets.WiredAssets.ContainsKey(asset.GUID) && _assets.WiredAssets[asset.GUID] is WiringToolAsset)
+        {
+            UpdateNodesView(player.channel.owner.playerID.steamID);
+        }
+    }
+
+    private void OnDequipRequested(Player player, ItemAsset asset, ref bool shouldAllow)
+    {
+        if (_assets.WiredAssets.ContainsKey(asset.GUID) && _assets.WiredAssets[asset.GUID] is WiringToolAsset)
+        {
+            player.ServerShowHint("", 0);
+            UnturnedPlayer uplayer = UnturnedPlayer.FromPlayer(player);
+            _playersInLinkingMode.Remove(uplayer);
+            _lookingAt.Remove(uplayer.CSteamID);
+            _selectedNode.Remove(player.channel.owner.playerID.steamID);
+            ClearNodeView(player.channel.owner.playerID.steamID);
+            ClearPreviewView(player.channel.owner.playerID.steamID);
+        }
+    }
+
+    private void OnNodeSelectionCleared(UnturnedPlayer player)
+    {
+        player.Player.ServerShowHint("Selection cleared.", 2f);
+        _playersInLinkingMode.Remove(player);
+        _lookingAt.Remove(player.CSteamID);
+        ClearPreviewView(player.CSteamID);
+    }
+
+    private void OnNodeSelected(UnturnedPlayer player, Transform nodeTransform)
+    {
+        player.Player.ServerShowHint("Click on another <b>thing</b> to link them together!<br>Click anywhere else to cancel.", 60f);
+        _selectedNode[player.CSteamID] = nodeTransform;
+        _playersInLinkingMode.Add(player);
+        _lookingAt[player.CSteamID] = 0;
+    }
+
+    private void Update()
+    {
+        foreach (var steamplayer in Provider.clients)
+        {
+            var player = UnturnedPlayer.FromSteamPlayer(steamplayer);
+
+            if (!_playersWithGogglesOn.Contains(player) && !_playersInLinkingMode.Contains(player))
+                continue;
+
+            Raycast ray = new Raycast(player.Player, 16);
+            BarricadeDrop drop = ray.GetBarricade(out _, out float distance);
+            
+            if (drop == null)
             {
-                UpdateNodesView(player.channel.owner.playerID.steamID);
+                _lookingAt[player.CSteamID] = 0;
+                ClearPreviewView(player.CSteamID);
+                ClearGogglesView(player.CSteamID);
+                continue;
             }
-        }
-
-        private void OnDequipRequested(Player player, ItemAsset asset, ref bool shouldAllow)
-        {
-            if (_assets.WiredAssets.ContainsKey(asset.GUID) && _assets.WiredAssets[asset.GUID] is WiringToolAsset)
+            if(distance > 4)
             {
-                player.ServerShowHint("", 0);
-                UnturnedPlayer uplayer = UnturnedPlayer.FromPlayer(player);
-                _playersInLinkingMode.Remove(uplayer);
-                _lookingAt.Remove(uplayer.CSteamID);
-                _selectedNode.Remove(player.channel.owner.playerID.steamID);
-                ClearNodeView(player.channel.owner.playerID.steamID);
-                ClearPreviewView(player.channel.owner.playerID.steamID);
+                ClearGogglesView(player.CSteamID);
             }
-        }
-
-        private void OnNodeSelectionCleared(UnturnedPlayer player)
-        {
-            player.Player.ServerShowHint("Selection cleared.", 2f);
-            _playersInLinkingMode.Remove(player);
-            _lookingAt.Remove(player.CSteamID);
-            ClearPreviewView(player.CSteamID);
-        }
-
-        private void OnNodeSelected(UnturnedPlayer player, Transform nodeTransform)
-        {
-            player.Player.ServerShowHint("Click on another <b>thing</b> to link them together!<br>Click anywhere else to cancel.", 60f);
-            _selectedNode[player.CSteamID] = nodeTransform;
-            _playersInLinkingMode.Add(player);
-            _lookingAt[player.CSteamID] = 0;
-        }
-
-        private void Update()
-        {
-            foreach (var steamplayer in Provider.clients)
+            if (_playersWithGogglesOn.Contains(player) && distance <=4)
             {
-                var player = UnturnedPlayer.FromSteamPlayer(steamplayer);
+                UpdateGogglesView(player.CSteamID, drop);
+            }
+            if (player.Player == null || !_selectedNode.ContainsKey(player.CSteamID))
+            {
+                _playersInLinkingMode.Remove(player);
+                _lookingAt.Remove(player.CSteamID);
+                continue;
+            }
 
-                if (!_playersWithGogglesOn.Contains(player) && !_playersInLinkingMode.Contains(player))
-                    continue;
-
-                Raycast ray = new Raycast(player.Player, 16);
-                BarricadeDrop drop = ray.GetBarricade(out _, out float distance);
-                
-                if (drop == null)
-                {
-                    _lookingAt[player.CSteamID] = 0;
-                    ClearPreviewView(player.CSteamID);
-                    ClearGogglesView(player.CSteamID);
-                    continue;
-                }
-                if(distance > 4)
-                {
-                    ClearGogglesView(player.CSteamID);
-                }
-                if (_playersWithGogglesOn.Contains(player) && distance <=4)
-                {
-                    UpdateGogglesView(player.CSteamID, drop);
-                }
-                if (player.Player == null || !_selectedNode.ContainsKey(player.CSteamID))
-                {
-                    _playersInLinkingMode.Remove(player);
-                    _lookingAt.Remove(player.CSteamID);
-                    continue;
-                }
-
-                var lookingatID = drop.instanceID;
-                if (drop.model == _selectedNode[player.CSteamID]) // If the drop they lookign at is the one they have selected
+            var lookingatID = drop.instanceID;
+            if (drop.model == _selectedNode[player.CSteamID]) // If the drop they lookign at is the one they have selected
+            {
+                _lookingAt[player.CSteamID] = lookingatID;
+                ClearPreviewView(player.CSteamID);
+                continue;
+            }
+            if (_lookingAt[player.CSteamID] == lookingatID) // If the drop they looking at hasn't changed since last update()
+            {
+                continue;
+            }
+            if (!drop.model.TryGetComponent(out IElectricNode node)) // If the barricade is not a Wired component
+            {
+                _lookingAt[player.CSteamID] = lookingatID;
+                ClearPreviewView(player.CSteamID);
+                ClearGogglesView(player.CSteamID);
+                continue;
+            }
+            if (_playersInLinkingMode.Contains(player))
+            {
+                if (_ncs.GetConnection(node, _selectedNode[player.CSteamID].GetComponent<IElectricNode>()) != null) // If looking at the existing connection
                 {
                     _lookingAt[player.CSteamID] = lookingatID;
                     ClearPreviewView(player.CSteamID);
                     continue;
                 }
-                if (_lookingAt[player.CSteamID] == lookingatID) // If the drop they looking at hasn't changed since last update()
-                {
-                    continue;
-                }
-                if (!drop.model.TryGetComponent(out IElectricNode node)) // If the barricade is not a Wired component
-                {
-                    _lookingAt[player.CSteamID] = lookingatID;
-                    ClearPreviewView(player.CSteamID);
-                    ClearGogglesView(player.CSteamID);
-                    continue;
-                }
-                if (_playersInLinkingMode.Contains(player))
-                {
-                    if (_ncs.GetConnection(node, _selectedNode[player.CSteamID].GetComponent<IElectricNode>()) != null) // If looking at the existing connection
-                    {
-                        _lookingAt[player.CSteamID] = lookingatID;
-                        ClearPreviewView(player.CSteamID);
-                        continue;
-                    }
 
-                    _lookingAt[player.CSteamID] = lookingatID;
+                _lookingAt[player.CSteamID] = lookingatID;
 
-                    foreach (Guid guid in _resources.previeweffects)
-                        EffectManager.ClearEffectByGuid(guid, Provider.findTransportConnection(player.CSteamID));
+                foreach (Guid guid in _resources.previeweffects)
+                    EffectManager.ClearEffectByGuid(guid, Provider.findTransportConnection(player.CSteamID));
 
-                    EffectAsset effect;
-                    var node1type = _selectedNode[player.CSteamID].GetComponent<IElectricNode>();
-                    var node2type = node;
+                EffectAsset effect;
+                var node1type = _selectedNode[player.CSteamID].GetComponent<IElectricNode>();
+                var node2type = node;
 
-                    if (node1type is SupplierNode || node2type is SupplierNode)
-                        effect = _resources.preview_power;
-                    else if (node2type is GateNode || node2type is GateNode)
-                        effect = _resources.preview_gate;
-                    else if (node2type is TimerNode || node2type is TimerNode)
-                        effect = _resources.preview_timer;
-                    else
-                        effect = _resources.preview_consumer;
-
-
-                    TracePath(player, _selectedNode[player.CSteamID].position, drop.model.position, effect);
-                }
-            }
-        }
-
-        private void UpdateNodesView(CSteamID steamid)
-        {
-            foreach (Guid guid in _resources.nodeeffects)
-                EffectManager.ClearEffectByGuid(guid, Provider.findTransportConnection(steamid));
-
-            UnturnedPlayer player = UnturnedPlayer.FromCSteamID(steamid);
-            if (player == null) return;
-
-            HashSet<IElectricNode> visibleNodes = new HashSet<IElectricNode>();
-
-            var bfinder = new BarricadeFinder(player.Position);
-            foreach (BarricadeDrop drop in bfinder.GetBarricadesInRadius(100f))
-            {
-                Transform t = drop.model;
-                if (t == null) continue;
-
-                if (!t.TryGetComponent(out IElectricNode node))
-                    continue;
-
-                if (!DoesOwnDrop(drop, steamid))
-                    continue;
-
-                visibleNodes.Add(node);
-
-                if (node is ConsumerNode)
-                    sendEffectCool(player, t.position, _resources.node_consumer);
-                else if (node is SupplierNode)
-                    sendEffectCool(player, t.position, _resources.node_power);
-                else if (node is GateNode)
-                    sendEffectCool(player, t.position, _resources.node_gate);
-                else if (node is TimerNode)
-                    sendEffectCool(player, t.position, _resources.node_timer);
-            }
-
-            foreach (var connection in _ncs.GetAllConnections())
-            {
-                bool isNode1Visible = visibleNodes.Contains(connection.Node1);
-                bool isNode2Visible = visibleNodes.Contains(connection.Node2);
-
-                if (!isNode1Visible && !isNode2Visible)
-                    continue;
-
-                EffectAsset pathEffect;
-
-                if (connection.Node1 is SupplierNode || connection.Node2 is SupplierNode)
-                {
-                    pathEffect = _resources.path_power;
-                }
-                else if (connection.Node1 is GateNode || connection.Node2 is GateNode)
-                {
-                    pathEffect = _resources.path_gate;
-                }
-                else if (connection.Node1 is TimerNode || connection.Node2 is TimerNode)
-                {
-                    pathEffect = _resources.path_timer;
-                }
+                if (node1type is SupplierNode || node2type is SupplierNode)
+                    effect = _resources.preview_power;
+                else if (node2type is GateNode || node2type is GateNode)
+                    effect = _resources.preview_gate;
+                else if (node2type is TimerNode || node2type is TimerNode)
+                    effect = _resources.preview_timer;
                 else
-                {
-                    pathEffect = _resources.path_consumer;
-                }
+                    effect = _resources.preview_consumer;
 
-                Vector3 start = ((MonoBehaviour)connection.Node1).transform.position;
-                Vector3 end = ((MonoBehaviour)connection.Node2).transform.position;
 
-                TracePath(player, start, end, pathEffect);
+                TracePath(player, _selectedNode[player.CSteamID].position, drop.model.position, effect);
             }
         }
+    }
 
-        private void UpdateWires()
+    private void UpdateNodesView(CSteamID steamid)
+    {
+        foreach (Guid guid in _resources.nodeeffects)
+            EffectManager.ClearEffectByGuid(guid, Provider.findTransportConnection(steamid));
+
+        UnturnedPlayer player = UnturnedPlayer.FromCSteamID(steamid);
+        if (player == null) return;
+
+        HashSet<IElectricNode> visibleNodes = new HashSet<IElectricNode>();
+
+        var bfinder = new BarricadeFinder(player.Position);
+        foreach (BarricadeDrop drop in bfinder.GetBarricadesInRadius(100f))
         {
-            EffectManager.ClearEffectByGuid_AllPlayers(_resources.wire_2m.GUID);
-            EffectManager.ClearEffectByGuid_AllPlayers(_resources.wire_4m.GUID);
-            EffectManager.ClearEffectByGuid_AllPlayers(_resources.wire_6m.GUID);
-            EffectManager.ClearEffectByGuid_AllPlayers(_resources.wire_8m.GUID);
+            Transform t = drop.model;
+            if (t == null) continue;
 
-            HashSet<NodeConnection> visited = new HashSet<NodeConnection>();
+            if (!t.TryGetComponent(out IElectricNode node))
+                continue;
 
-            int i = 0;
+            if (!DoesOwnDrop(drop, steamid))
+                continue;
 
-            foreach(var con in _ncs.GetAllConnections())
+            visibleNodes.Add(node);
+
+            if (node is ConsumerNode)
+                sendEffectCool(player, t.position, _resources.node_consumer);
+            else if (node is SupplierNode)
+                sendEffectCool(player, t.position, _resources.node_power);
+            else if (node is GateNode)
+                sendEffectCool(player, t.position, _resources.node_gate);
+            else if (node is TimerNode)
+                sendEffectCool(player, t.position, _resources.node_timer);
+        }
+
+        foreach (var connection in _ncs.GetAllConnections())
+        {
+            bool isNode1Visible = visibleNodes.Contains(connection.Node1);
+            bool isNode2Visible = visibleNodes.Contains(connection.Node2);
+
+            if (!isNode1Visible && !isNode2Visible)
+                continue;
+
+            EffectAsset pathEffect;
+
+            if (connection.Node1 is SupplierNode || connection.Node2 is SupplierNode)
             {
-                if(visited.Contains(con)) continue;
-                visited.Add(con);
-
-                i++;
-
-                EffectAsset wire = _resources.wire_8m;
-                float scalemodifier = 1f/8f;
-                var distance = Vector3.Distance(con.Node1.WireConnectPoint.position, con.Node2.WireConnectPoint.position);
-                if (distance <= 0.5) return;
-
-                if (distance <= 10 && distance > 6)
-                {
-                    wire = _resources.wire_8m;
-                    scalemodifier = 1f / 8f;
-                }
-                else if (distance <= 6 && distance > 4)
-                {
-                    wire = _resources.wire_6m;
-                    scalemodifier = 1f / 6f;
-                }
-                else if (distance <= 4 && distance > 2)
-                {
-                    wire = _resources.wire_4m;
-                    scalemodifier = 1f / 4f;
-                }
-                else
-                {
-                    wire = _resources.wire_2m;
-                    scalemodifier = 1f / 2f;
-                }
-
-                Vector3 direction = (con.Node2.WireConnectPoint.position - con.Node1.WireConnectPoint.position).normalized;
-
-                TriggerEffectParameters effect = new TriggerEffectParameters
-                {
-                    asset = wire,
-                    position = con.Node1.WireConnectPoint.position,
-                    relevantDistance = 64f,
-                    shouldReplicate = true,
-                    reliable = true,
-                    scale = new Vector3(1f, 1f, distance * scalemodifier)
-                };
-                effect.SetDirection(direction);
-                EffectManager.triggerEffect(effect);
+                pathEffect = _resources.path_power;
             }
-            WiredLogger.Info($"Displayed {i} wires.");
-        }
-        private void UpdateWires(UnturnedPlayer player)
-        {
-            EffectManager.ClearEffectByGuid(_resources.wire_2m.GUID, player.Player.channel.owner.transportConnection);
-            EffectManager.ClearEffectByGuid(_resources.wire_4m.GUID, player.Player.channel.owner.transportConnection);
-            EffectManager.ClearEffectByGuid(_resources.wire_6m.GUID, player.Player.channel.owner.transportConnection);
-            EffectManager.ClearEffectByGuid(_resources.wire_8m.GUID, player.Player.channel.owner.transportConnection);
-
-            HashSet<NodeConnection> visited = new HashSet<NodeConnection>();
-
-            int i = 0;
-
-            foreach (var con in _ncs.GetAllConnections())
+            else if (connection.Node1 is GateNode || connection.Node2 is GateNode)
             {
-                if (visited.Contains(con)) continue;
-                visited.Add(con);
-
-                i++;
-
-                EffectAsset wire = _resources.wire_8m;
-                float scalemodifier = 1f / 8f;
-                var distance = Vector3.Distance(con.Node1.WireConnectPoint.position, con.Node2.WireConnectPoint.position);
-                if (distance <= 10 && distance > 6)
-                {
-                    wire = _resources.wire_8m;
-                    scalemodifier = 1f / 8f;
-                }
-                else if (distance <= 6 && distance > 4)
-                {
-                    wire = _resources.wire_6m;
-                    scalemodifier = 1f / 6f;
-                }
-                else if (distance <= 4 && distance > 2)
-                {
-                    wire = _resources.wire_4m;
-                    scalemodifier = 1f / 4f;
-                }
-                else
-                {
-                    wire = _resources.wire_2m;
-                    scalemodifier = 1f / 2f;
-                }
-
-                Vector3 direction = (con.Node2.WireConnectPoint.position - con.Node1.WireConnectPoint.position).normalized;
-
-                TriggerEffectParameters effect = new TriggerEffectParameters
-                {
-                    asset = wire,
-                    position = con.Node1.WireConnectPoint.position,
-                    relevantDistance = 64f,
-                    shouldReplicate = true,
-                    reliable = true,
-                    scale = new Vector3(1f, 1f, distance * scalemodifier)
-                };
-                effect.SetDirection(direction);
-                EffectManager.triggerEffect(effect);
+                pathEffect = _resources.path_gate;
             }
-            WiredLogger.Info($"Displayed {i} wires.");
-        }
-
-        private void UpdateGogglesView(CSteamID steamid, BarricadeDrop drop)
-        {
-            if(!drop.model.TryGetComponent(out IElectricNode node))
+            else if (connection.Node1 is TimerNode || connection.Node2 is TimerNode)
             {
-                ClearGogglesView(steamid);
-                return;
+                pathEffect = _resources.path_timer;
             }
-
-            switch (node)
+            else
             {
-                case SupplierNode sup:
-                    {
-                        EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Consumer", false);
-                        EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Switch", false);
-
-
-                        EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Name_Supplier", $"{drop.asset.FriendlyName}");
-                        EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Stat_Supplier_Supply", $"{sup.Supply}pu");
-                        EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Stat_Supplier_Powered", sup.IsPowered ? "Yes" : "No");
-                        EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Supplier", true);
-                    }
-                    break;
-                case ConsumerNode cons:
-                    {
-                        EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Supplier", false);
-                        EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Switch", false);
-
-
-                        EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Name_Consumer", $"{drop.asset.FriendlyName}");
-                        EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Stat_Consumer_Consumption", $"{cons.Consumption}pu");
-                        EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Stat_Consumer_Powered", cons.IsPowered ? "Yes" : "No");
-                        EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Consumer", true);
-                    }
-                    break;
-                case GateNode sw:
-                    {
-                        EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Supplier", false);
-                        EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Consumer", false);
-
-                        EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Name_Switch", $"{drop.asset.FriendlyName}");
-                        EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Stat_Switch_IsOn", sw.IsPowered ? "Yes" : "No");
-                        EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Switch", true);
-                    }
-                    break;
-                default:
-                    break;
+                pathEffect = _resources.path_consumer;
             }
-        }
-        private void ClearNodeView(CSteamID steamid)
-        {
-            foreach (Guid guid in _resources.nodeeffects)
-                EffectManager.ClearEffectByGuid(guid, Provider.findTransportConnection(steamid));
-        }
-        private void ClearPreviewView(CSteamID steamid)
-        {
-            foreach (Guid guid in _resources.previeweffects)
-                EffectManager.ClearEffectByGuid(guid, Provider.findTransportConnection(steamid));
-        }
-        private void ClearGogglesView(CSteamID steamid)
-        {
-            EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), false, "Box_Supplier", false);
-            EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), false, "Box_Consumer", false);
-            EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), false, "Box_Switch", false);
-        }
-        private void TracePath(UnturnedPlayer player, Vector3 point1, Vector3 point2, EffectAsset pathEffect)
-        {
-            float distance = Vector3.Distance(point1, point2);
 
-            Vector3 direction = (point2 - point1).normalized;
+            Vector3 start = ((MonoBehaviour)connection.Node1).transform.position;
+            Vector3 end = ((MonoBehaviour)connection.Node2).transform.position;
+
+            TracePath(player, start, end, pathEffect);
+        }
+    }
+
+    private void UpdateWires()
+    {
+        EffectManager.ClearEffectByGuid_AllPlayers(_resources.wire_2m.GUID);
+        EffectManager.ClearEffectByGuid_AllPlayers(_resources.wire_4m.GUID);
+        EffectManager.ClearEffectByGuid_AllPlayers(_resources.wire_6m.GUID);
+        EffectManager.ClearEffectByGuid_AllPlayers(_resources.wire_8m.GUID);
+
+        HashSet<NodeConnection> visited = new HashSet<NodeConnection>();
+
+        int i = 0;
+
+        foreach(var con in _ncs.GetAllConnections())
+        {
+            if(visited.Contains(con)) continue;
+            visited.Add(con);
+
+            i++;
+
+            EffectAsset wire = _resources.wire_8m;
+            float scalemodifier = 1f/8f;
+            var distance = Vector3.Distance(con.Node1.WireConnectPoint.position, con.Node2.WireConnectPoint.position);
+            if (distance <= 0.5) continue;
+
+            if (distance <= 10 && distance > 6)
+            {
+                wire = _resources.wire_8m;
+                scalemodifier = 1f / 8f;
+            }
+            else if (distance <= 6 && distance > 4)
+            {
+                wire = _resources.wire_6m;
+                scalemodifier = 1f / 6f;
+            }
+            else if (distance <= 4 && distance > 2)
+            {
+                wire = _resources.wire_4m;
+                scalemodifier = 1f / 4f;
+            }
+            else
+            {
+                wire = _resources.wire_2m;
+                scalemodifier = 1f / 2f;
+            }
+
+            Vector3 direction = (con.Node2.WireConnectPoint.position - con.Node1.WireConnectPoint.position).normalized;
 
             TriggerEffectParameters effect = new TriggerEffectParameters
             {
-                asset = pathEffect,
-                position = point1,
-                relevantDistance = 64f,
+                asset = wire,
+                position = con.Node1.WireConnectPoint.position,
+                relevantDistance = 4096,
                 shouldReplicate = true,
                 reliable = true,
-                scale = new Vector3(1f, 1f, distance)
+                scale = new Vector3(1f, 1f, distance * scalemodifier)
             };
             effect.SetDirection(direction);
-            effect.SetRelevantPlayer(player.SteamPlayer());
             EffectManager.triggerEffect(effect);
         }
+        WiredLogger.Info($"Displayed {i} wires.");
+    }
+    private void UpdateWires(UnturnedPlayer player)
+    {
+        EffectManager.ClearEffectByGuid(_resources.wire_2m.GUID, player.Player.channel.owner.transportConnection);
+        EffectManager.ClearEffectByGuid(_resources.wire_4m.GUID, player.Player.channel.owner.transportConnection);
+        EffectManager.ClearEffectByGuid(_resources.wire_6m.GUID, player.Player.channel.owner.transportConnection);
+        EffectManager.ClearEffectByGuid(_resources.wire_8m.GUID, player.Player.channel.owner.transportConnection);
 
-        private void sendEffectCool(UnturnedPlayer player, Vector3 dropPosition, EffectAsset asset)
+        HashSet<NodeConnection> visited = new HashSet<NodeConnection>();
+
+        int i = 0;
+
+        foreach (var con in _ncs.GetAllConnections())
         {
+            if (visited.Contains(con)) continue;
+            visited.Add(con);
+
+            i++;
+
+            EffectAsset wire = _resources.wire_8m;
+            float scalemodifier = 1f / 8f;
+            var distance = Vector3.Distance(con.Node1.WireConnectPoint.position, con.Node2.WireConnectPoint.position);
+            if (distance <= 10 && distance > 6)
+            {
+                wire = _resources.wire_8m;
+                scalemodifier = 1f / 8f;
+            }
+            else if (distance <= 6 && distance > 4)
+            {
+                wire = _resources.wire_6m;
+                scalemodifier = 1f / 6f;
+            }
+            else if (distance <= 4 && distance > 2)
+            {
+                wire = _resources.wire_4m;
+                scalemodifier = 1f / 4f;
+            }
+            else
+            {
+                wire = _resources.wire_2m;
+                scalemodifier = 1f / 2f;
+            }
+
+            Vector3 direction = (con.Node2.WireConnectPoint.position - con.Node1.WireConnectPoint.position).normalized;
+
             TriggerEffectParameters effect = new TriggerEffectParameters
             {
-                asset = asset,
-                position = dropPosition,
+                asset = wire,
+                position = con.Node1.WireConnectPoint.position,
                 relevantDistance = 64f,
                 shouldReplicate = true,
                 reliable = true,
+                scale = new Vector3(1f, 1f, distance * scalemodifier)
             };
-            effect.SetDirection(Vector3.down);
-            effect.SetRelevantPlayer(player.SteamPlayer());
+            effect.SetDirection(direction);
             EffectManager.triggerEffect(effect);
         }
+        WiredLogger.Info($"Displayed {i} wires.");
+    }
 
-        private bool DoesOwnDrop(BarricadeDrop drop, CSteamID steamid)
+    private void UpdateGogglesView(CSteamID steamid, BarricadeDrop drop)
+    {
+        if(!drop.model.TryGetComponent(out IElectricNode node))
         {
-            var dropdata = drop.GetServersideData();
-            if (dropdata.owner != 0 && dropdata.owner == (ulong)steamid)
-                return true;
-            if (dropdata.group != 0 && dropdata.group == (ulong)UnturnedPlayer.FromCSteamID(steamid).SteamGroupID)
-                return true;
-            if (dropdata.group != 0 && dropdata.group == (ulong)UnturnedPlayer.FromCSteamID(steamid).Player.quests.groupID)
-                return true;
-            return false;
+            ClearGogglesView(steamid);
+            return;
         }
+
+        switch (node)
+        {
+            case SupplierNode sup:
+                {
+                    EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Consumer", false);
+                    EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Switch", false);
+
+
+                    EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Name_Supplier", $"{drop.asset.FriendlyName}");
+                    EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Stat_Supplier_Supply", $"{sup.Supply}pu");
+                    EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Stat_Supplier_Powered", sup.IsPowered ? "Yes" : "No");
+                    EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Supplier", true);
+                }
+                break;
+            case ConsumerNode cons:
+                {
+                    EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Supplier", false);
+                    EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Switch", false);
+
+
+                    EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Name_Consumer", $"{drop.asset.FriendlyName}");
+                    EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Stat_Consumer_Consumption", $"{cons.Consumption}pu");
+                    EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Stat_Consumer_Powered", cons.IsPowered ? "Yes" : "No");
+                    EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Consumer", true);
+                }
+                break;
+            case GateNode sw:
+                {
+                    EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Supplier", false);
+                    EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Consumer", false);
+
+                    EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Name_Switch", $"{drop.asset.FriendlyName}");
+                    EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Stat_Switch_IsOn", sw.IsPowered ? "Yes" : "No");
+                    EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Switch", true);
+                }
+                break;
+            default:
+                break;
+        }
+    }
+    private void ClearNodeView(CSteamID steamid)
+    {
+        foreach (Guid guid in _resources.nodeeffects)
+            EffectManager.ClearEffectByGuid(guid, Provider.findTransportConnection(steamid));
+    }
+    private void ClearPreviewView(CSteamID steamid)
+    {
+        foreach (Guid guid in _resources.previeweffects)
+            EffectManager.ClearEffectByGuid(guid, Provider.findTransportConnection(steamid));
+    }
+    private void ClearGogglesView(CSteamID steamid)
+    {
+        EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), false, "Box_Supplier", false);
+        EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), false, "Box_Consumer", false);
+        EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), false, "Box_Switch", false);
+    }
+    private void TracePath(UnturnedPlayer player, Vector3 point1, Vector3 point2, EffectAsset pathEffect)
+    {
+        float distance = Vector3.Distance(point1, point2);
+
+        Vector3 direction = (point2 - point1).normalized;
+
+        TriggerEffectParameters effect = new TriggerEffectParameters
+        {
+            asset = pathEffect,
+            position = point1,
+            relevantDistance = 64f,
+            shouldReplicate = true,
+            reliable = true,
+            scale = new Vector3(1f, 1f, distance)
+        };
+        effect.SetDirection(direction);
+        effect.SetRelevantPlayer(player.SteamPlayer());
+        EffectManager.triggerEffect(effect);
+    }
+
+    private void sendEffectCool(UnturnedPlayer player, Vector3 dropPosition, EffectAsset asset)
+    {
+        TriggerEffectParameters effect = new TriggerEffectParameters
+        {
+            asset = asset,
+            position = dropPosition,
+            relevantDistance = 64f,
+            shouldReplicate = true,
+            reliable = true,
+        };
+        effect.SetDirection(Vector3.down);
+        effect.SetRelevantPlayer(player.SteamPlayer());
+        EffectManager.triggerEffect(effect);
+    }
+
+    private bool DoesOwnDrop(BarricadeDrop drop, CSteamID steamid)
+    {
+        var dropdata = drop.GetServersideData();
+        if (dropdata.owner != 0 && dropdata.owner == (ulong)steamid)
+            return true;
+        if (dropdata.group != 0 && dropdata.group == (ulong)UnturnedPlayer.FromCSteamID(steamid).SteamGroupID)
+            return true;
+        if (dropdata.group != 0 && dropdata.group == (ulong)UnturnedPlayer.FromCSteamID(steamid).Player.quests.groupID)
+            return true;
+        return false;
     }
 }

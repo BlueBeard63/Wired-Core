@@ -31,6 +31,10 @@ namespace Wired.Models
                 BarricadeManager.ServerSetSpotPowered(spot, powered);
             }
         }
+        public void Uninitialize()
+        {
+            Destroy(this);
+        }
         private void Awake()
         {
             InstanceID = BarricadeManager.FindBarricadeByRootTransform(this.transform).instanceID;
