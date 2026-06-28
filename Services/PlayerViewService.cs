@@ -70,7 +70,7 @@ public class PlayerViewService : MonoBehaviour
         {
             return;
         }
-        if (_assets.WiredAssets.ContainsKey(obj.glassesAsset.GUID) && (_assets.WiredAssets[obj.glassesAsset.GUID] is not EngineerGogglesAsset))
+        if (_assets.WiredAssets.ContainsKey(obj.glassesAsset.GUID) && (_assets.WiredAssets[obj.glassesAsset.GUID] is EngineerGogglesAsset))
         {
             _playersWithGogglesOn.Add(UnturnedPlayer.FromPlayer(obj.player));
             WiredLogger.Info($"Player {obj.player.channel.owner.playerID.steamID} has Wired Engineer Goggles on.");
