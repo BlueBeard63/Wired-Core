@@ -47,6 +47,7 @@ public class SolarPanel : MonoBehaviour, IWiredInteractable
         _MovingPartGameobj = transform.Find("MovingPart");
 
         BarricadeDrop.OnSalvageRequested_Global += OnSalvageRequested_Global;
+        OnTimeOfDayUpdated(LightingManager.time, (float)LightingManager.time / (float)LightingManager.cycle);
     }
 
     private void OnSalvageRequested_Global(BarricadeDrop barricade, SteamPlayer instigatorClient, ref bool shouldAllow)
