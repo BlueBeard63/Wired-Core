@@ -108,9 +108,21 @@ namespace Wired
         }
 
         private uint time = 0;
+        private ushort fpr = 0;
         private void Update()
         {
             if (!_levelLoaded) return;
+            if (fpr < Configuration.Instance.RecalculationRateLimit)
+                fpr++;
+            else
+            {
+                foreach (var network in Services.NodeConnectionsService.Networks)
+                {
+                    network.ResetFrameLock();
+                }
+                fpr = 0;
+            }
+
             if (LightingManager.time == time) return;
 
             time = LightingManager.time;

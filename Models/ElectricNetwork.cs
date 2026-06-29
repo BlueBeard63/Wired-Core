@@ -17,6 +17,19 @@ namespace Wired.Models
         public float TotalSupply { get; private set; }
         public float TotalConsumption { get; private set; }
 
+        /// <summary>
+        /// Resets to false every <see cref="Plugin.Update"/>, to limit recalculations to 1 per frame.
+        /// A measure to prevent lag machines.
+        /// </summary>
+        private bool _frameLocked = false;
+        private bool _recalculationPending = false;
+        public void ResetFrameLock()
+        {
+            _frameLocked = false;
+            if(_recalculationPending)
+                RecalculatePower();
+        }
+
         public static event Action<ElectricNetwork, float> PowerUpdated;
 
         public void AddNode(IElectricNode node) => Nodes.Add(node);
@@ -24,6 +37,13 @@ namespace Wired.Models
 
         public void RecalculatePower()
         {
+            if (_frameLocked)
+            {
+                _recalculationPending = true;
+                return;
+            }
+            _frameLocked = true;
+
             Stopwatch sw = new Stopwatch();
             sw.Start();
 
