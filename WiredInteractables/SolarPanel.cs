@@ -165,11 +165,8 @@ public class SolarPanel : MonoBehaviour, IWiredInteractable
     }
     public void Uninitialize()
     {
-        Destroy(this);
-    }
-    private void OnDestroy()
-    {
         Plugin.OnTimeOfDayUpdated -= OnTimeOfDayUpdated;
         BarricadeDrop.OnSalvageRequested_Global -= OnSalvageRequested_Global;
+        Destroy(this);
     }
 }

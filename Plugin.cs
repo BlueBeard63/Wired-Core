@@ -102,9 +102,9 @@ namespace Wired
             }
 
             WiredLogger.LogPluginLoaded(true);
-            _levelLoaded = true;
             Resources = new Resources();
             Services = new ServiceContainer(Resources);
+            _levelLoaded = true;
         }
 
         private uint time = 0;
@@ -112,7 +112,7 @@ namespace Wired
         private void Update()
         {
             if (!_levelLoaded) return;
-            if (fpr < Configuration.Instance.RecalculationRateLimit)
+            if (fpr < 2)
                 fpr++;
             else
             {
@@ -168,30 +168,23 @@ namespace Wired
                 Player player = context.GetPlayer();
                 if (player == null)
                 {
-                    Console.WriteLine($"ReceiveToggleRequest behaviour 1");
                     return true;
                 }
 
                 if (__instance.gameObject.TryGetComponent(out GateNode sw))
                 {
-                    Console.WriteLine($"ReceiveToggleRequest behaviour 2");
-
                     if (!sw.SwitchableByPlayer)
                     {
-                        Console.WriteLine($"ReceiveToggleRequest behaviour 3");
                         if (__instance.gameObject.TryGetComponent(out Keypad kp))
                         {
-                            Console.WriteLine($"ReceiveToggleRequest behaviour 4");
                             OnKeypadInteractRequested?.Invoke(kp, player);
                             return false;
                         }
                         return false;
                     }
-                    Console.WriteLine($"ReceiveToggleRequest behaviour 5");
                     sw.Switch(desiredPowered);
                     return true;
                 }
-                Console.WriteLine($"ReceiveToggleRequest behaviour 6");
                 return false;
             }
         }
@@ -249,6 +242,10 @@ namespace Wired
                 if(barricade.model.TryGetComponent(out IElectricNode node))
                 {
                     Plugin.Instance.Services.NodeConnectionsService.NodeDestroyed(node);
+                }
+                if(barricade.model.TryGetComponent(out IWiredInteractable wa))
+                {
+                    wa.Uninitialize();
                 }
                 return true;
             }

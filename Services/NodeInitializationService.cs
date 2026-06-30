@@ -74,6 +74,15 @@ namespace Wired.Services
                     sw.SwitchableByPlayer = true;
                     createdNode = sw;
                     break;
+
+                case LogicGateAsset logicGate:
+                    var gn = barricade.model.gameObject.AddComponent<GateNode>();
+                    gn.Asset = logicGate;
+                    gn.SetPowered(false);
+                    gn.SwitchableByPlayer = false;
+                    var lg = gn.gameObject.AddComponent<LogicGate>();
+                    lg.Type = logicGate.Type;
+                    break;
                 
                 case ConnectorAsset connectorAsset:
                     var cn = barricade.model.gameObject.AddComponent<GateNode>();

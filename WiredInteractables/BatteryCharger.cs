@@ -22,10 +22,7 @@ public class BatteryCharger : MonoBehaviour, IWiredInteractable
     {
         IsOn = state;
     }
-    public void Uninitialize()
-    {
-        Destroy(this);
-    }
+
     private void Awake()
     {
         if (!TryGetComponent(out InteractableStorage storage))
@@ -66,12 +63,6 @@ public class BatteryCharger : MonoBehaviour, IWiredInteractable
             shouldAllow = false;
     }
 
-    private void OnDestroy()
-    {
-        Plugin.OnDragItemRequested -= Plugin_OnDragItemRequested;
-        Plugin.OnDropItemRequested -= Plugin_OnDropItemRequested;
-        Plugin.OnSwapItemRequested -= Plugin_OnSwapItemRequested;
-    }
     private void Update()
     {
         if (!IsOn)
@@ -92,5 +83,12 @@ public class BatteryCharger : MonoBehaviour, IWiredInteractable
         if(battery.item.quality + intcharge <= 100)
             battery.item.quality += intcharge;
 
+    }
+    public void Uninitialize()
+    {
+        Plugin.OnDragItemRequested -= Plugin_OnDragItemRequested;
+        Plugin.OnDropItemRequested -= Plugin_OnDropItemRequested;
+        Plugin.OnSwapItemRequested -= Plugin_OnSwapItemRequested;
+        Destroy(this);
     }
 }

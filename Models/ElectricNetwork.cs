@@ -42,6 +42,7 @@ namespace Wired.Models
                 _recalculationPending = true;
                 return;
             }
+            _recalculationPending = false;
             _frameLocked = true;
 
             Stopwatch sw = new Stopwatch();

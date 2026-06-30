@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using Wired.Utilities;
 using Wired.WiredAssets;
+using Wired.WiredInteractables;
 
 namespace Wired.Services
 {
@@ -127,6 +128,25 @@ namespace Wired.Services
                 WiredAssets.Add(asset.GUID,
                     new ConnectorAsset(
                     guid: asset.GUID));
+            }
+            else if (parser.HasEntry("WiredBuild LogicGate"))
+            {
+                if(parser.TryGetString("LogicGateType", out string lgt))
+                {
+                    if(Enum.TryParse(lgt, out LogicGateType type))
+                    {
+                        WiredAssets.Add(asset.GUID,
+                            new LogicGateAsset(guid: asset.GUID, type));
+                    }
+                    else
+                    {
+                        WiredLogger.Error($"Logic Gate asset {asset.FriendlyName} has invalid Wired configuration.");
+                    }
+                }
+                else
+                {
+                    WiredLogger.Error($"Logic Gate asset {asset.FriendlyName} has invalid Wired configuration.");
+                }
             }
         }
         private void PopulateConsumer(AssetParser parser, ItemAsset asset)

@@ -12,6 +12,7 @@ using System.Linq;
 using System.Reflection;
 using Rocket.Unturned.Commands;
 using Rocket.Unturned;
+using Wired.WiredInteractables;
 
 namespace Wired.Services;
 
@@ -45,7 +46,52 @@ public class PlayerViewService : MonoBehaviour
 
     private void OnPlayerConnected(UnturnedPlayer player)
     {
-        UpdateWires();
+        int i = 0;
+
+        foreach (var con in _ncs.GetAllConnections())
+        {
+            i++;
+
+            EffectAsset wire = _resources.wire_8m;
+            float scalemodifier = 1f / 8f;
+            var distance = Vector3.Distance(con.Node1.WireConnectPoint.position, con.Node2.WireConnectPoint.position);
+            if (distance <= 10 && distance > 6)
+            {
+                wire = _resources.wire_8m;
+                scalemodifier = 1f / 8f;
+            }
+            else if (distance <= 6 && distance > 4)
+            {
+                wire = _resources.wire_6m;
+                scalemodifier = 1f / 6f;
+            }
+            else if (distance <= 4 && distance > 2)
+            {
+                wire = _resources.wire_4m;
+                scalemodifier = 1f / 4f;
+            }
+            else
+            {
+                wire = _resources.wire_2m;
+                scalemodifier = 1f / 2f;
+            }
+
+            Vector3 direction = (con.Node2.WireConnectPoint.position - con.Node1.WireConnectPoint.position).normalized;
+
+            TriggerEffectParameters effect = new TriggerEffectParameters
+            {
+                asset = wire,
+                position = con.Node1.WireConnectPoint.position,
+                relevantDistance = 64f,
+                shouldReplicate = true,
+                reliable = true,
+                scale = new Vector3(1f, 1f, distance * scalemodifier)
+            };
+            effect.SetDirection(direction);
+            effect.SetRelevantPlayer(player.Player);
+            EffectManager.triggerEffect(effect);
+        }
+        WiredLogger.Info($"Displayed {i} wires.");
     }
 
     private void OnGlassesChanged_Global(PlayerClothing obj)
@@ -154,11 +200,20 @@ public class PlayerViewService : MonoBehaviour
         {
             var player = UnturnedPlayer.FromSteamPlayer(steamplayer);
 
-            if (!_playersWithGogglesOn.Contains(player) && !_playersInLinkingMode.Contains(player))
+            bool holdingWiringTool = false;
+            if (player.Player.equipment.asset != null)
+            {
+                if (_assets.WiredAssets.ContainsKey(player.Player.equipment.asset.GUID) && _assets.WiredAssets[player.Player.equipment.asset.GUID] is WiringToolAsset)
+                {
+                    holdingWiringTool = true;
+                }
+            }
+
+            if (!_playersWithGogglesOn.Contains(player) && !holdingWiringTool)
                 continue;
 
             Raycast ray = new Raycast(player.Player, 16);
-            BarricadeDrop drop = ray.GetBarricade(out _, out float distance);
+            BarricadeDrop drop = ray.GetBarricade(out _, out float distance, out LogicGateSubnode lgs);
             
             if (drop == null)
             {
@@ -175,6 +230,42 @@ public class PlayerViewService : MonoBehaviour
             {
                 UpdateGogglesView(player.CSteamID, drop);
             }
+            var lookingatID = drop.instanceID;
+            if (!drop.model.TryGetComponent(out IElectricNode node)) // If the barricade is not a Wired component
+            {
+                _lookingAt[player.CSteamID] = lookingatID;
+                ClearPreviewView(player.CSteamID);
+                ClearGogglesView(player.CSteamID);
+                continue;
+            }
+            if(lgs == null)
+            {
+                switch (node)
+                {
+                    case GateNode:
+                        sendEffectCool(player, drop.model.position, _resources.node_gate_selected);
+                        break;
+                    case TimerNode:
+                        sendEffectCool(player, drop.model.position, _resources.node_timer_selected);
+                        break;
+                    case LogicGateSubnode:
+                        sendEffectCool(player, drop.model.position, _resources.node_subnode_selected);
+                        break;
+                    case ConsumerNode:
+                        sendEffectCool(player, drop.model.position, _resources.node_consumer_selected);
+                        break;
+                    case SupplierNode:
+                        sendEffectCool(player, drop.model.position, _resources.node_power_selected);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            else
+            {
+                sendEffectCool(player, lgs.transform.position, _resources.node_subnode_selected);
+            }
+            
             if (player.Player == null || !_selectedNode.ContainsKey(player.CSteamID))
             {
                 _playersInLinkingMode.Remove(player);
@@ -182,7 +273,6 @@ public class PlayerViewService : MonoBehaviour
                 continue;
             }
 
-            var lookingatID = drop.instanceID;
             if (drop.model == _selectedNode[player.CSteamID]) // If the drop they lookign at is the one they have selected
             {
                 _lookingAt[player.CSteamID] = lookingatID;
@@ -193,13 +283,8 @@ public class PlayerViewService : MonoBehaviour
             {
                 continue;
             }
-            if (!drop.model.TryGetComponent(out IElectricNode node)) // If the barricade is not a Wired component
-            {
-                _lookingAt[player.CSteamID] = lookingatID;
-                ClearPreviewView(player.CSteamID);
-                ClearGogglesView(player.CSteamID);
-                continue;
-            }
+
+
             if (_playersInLinkingMode.Contains(player))
             {
                 if (_ncs.GetConnection(node, _selectedNode[player.CSteamID].GetComponent<IElectricNode>()) != null) // If looking at the existing connection
@@ -220,13 +305,35 @@ public class PlayerViewService : MonoBehaviour
 
                 if (node1type is SupplierNode || node2type is SupplierNode)
                     effect = _resources.preview_power;
-                else if (node2type is GateNode || node2type is GateNode)
+                else if (node1type is GateNode || node2type is GateNode)
                     effect = _resources.preview_gate;
-                else if (node2type is TimerNode || node2type is TimerNode)
+                else if (node1type is TimerNode || node2type is TimerNode)
                     effect = _resources.preview_timer;
+                else if (node1type is LogicGateSubnode || node2type is LogicGateSubnode)
+                    effect = _resources.preview_subnode;
                 else
                     effect = _resources.preview_consumer;
 
+                switch (node2type)
+                {
+                    case GateNode:
+                        sendEffectCool(player, drop.model.position, _resources.node_gate_selected);
+                        break;
+                    case TimerNode:
+                        sendEffectCool(player, drop.model.position, _resources.node_timer_selected);
+                        break;
+                    case LogicGateSubnode:
+                        sendEffectCool(player, drop.model.position, _resources.node_subnode_selected);
+                        break;
+                    case ConsumerNode:
+                        sendEffectCool(player, drop.model.position, _resources.node_consumer_selected);
+                        break;
+                    case SupplierNode:
+                        sendEffectCool(player, drop.model.position, _resources.node_power_selected);
+                        break;
+                    default:
+                        break;
+                }
 
                 TracePath(player, _selectedNode[player.CSteamID].position, drop.model.position, effect);
             }
@@ -261,8 +368,15 @@ public class PlayerViewService : MonoBehaviour
                 sendEffectCool(player, t.position, _resources.node_consumer);
             else if (node is SupplierNode)
                 sendEffectCool(player, t.position, _resources.node_power);
-            else if (node is GateNode)
+            else if (node is GateNode gn)
+            {
                 sendEffectCool(player, t.position, _resources.node_gate);
+                if(gn.TryGetComponent(out LogicGate lg))
+                {
+                    sendEffectCool(player, lg.Input0, _resources.node_subnode);
+                    sendEffectCool(player, lg.Input1, _resources.node_subnode);
+                }
+            }
             else if (node is TimerNode)
                 sendEffectCool(player, t.position, _resources.node_timer);
         }
@@ -289,6 +403,10 @@ public class PlayerViewService : MonoBehaviour
             {
                 pathEffect = _resources.path_timer;
             }
+            else if (connection.Node1 is LogicGateSubnode || connection.Node2 is LogicGateSubnode)
+            {
+                pathEffect = _resources.path_subnode;
+            }
             else
             {
                 pathEffect = _resources.path_consumer;
@@ -299,6 +417,32 @@ public class PlayerViewService : MonoBehaviour
 
             TracePath(player, start, end, pathEffect);
         }
+        if (_selectedNode.ContainsKey(player.CSteamID))
+        {
+            var selectedNode = _selectedNode[player.CSteamID];
+            if (!selectedNode.TryGetComponent(out IElectricNode node)) return;
+
+            switch (node)
+            {
+                case ConsumerNode:
+                    sendEffectCool(player, selectedNode.position, _resources.node_consumer_selected);
+                    break;
+                case GateNode:
+                    sendEffectCool(player, selectedNode.position, _resources.node_gate_selected);
+                    break;
+                case SupplierNode:
+                    sendEffectCool(player, selectedNode.position, _resources.node_power_selected);
+                    break;
+                case TimerNode:
+                    sendEffectCool(player, selectedNode.position, _resources.node_timer_selected);
+                    break;
+                case LogicGateSubnode:
+                    sendEffectCool(player, selectedNode.position, _resources.node_subnode_selected);
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 
     private void UpdateWires()
@@ -308,15 +452,10 @@ public class PlayerViewService : MonoBehaviour
         EffectManager.ClearEffectByGuid_AllPlayers(_resources.wire_6m.GUID);
         EffectManager.ClearEffectByGuid_AllPlayers(_resources.wire_8m.GUID);
 
-        HashSet<NodeConnection> visited = new HashSet<NodeConnection>();
-
         int i = 0;
 
         foreach(var con in _ncs.GetAllConnections())
         {
-            if(visited.Contains(con)) continue;
-            visited.Add(con);
-
             i++;
 
             EffectAsset wire = _resources.wire_8m;
@@ -352,64 +491,6 @@ public class PlayerViewService : MonoBehaviour
                 asset = wire,
                 position = con.Node1.WireConnectPoint.position,
                 relevantDistance = 4096,
-                shouldReplicate = true,
-                reliable = true,
-                scale = new Vector3(1f, 1f, distance * scalemodifier)
-            };
-            effect.SetDirection(direction);
-            EffectManager.triggerEffect(effect);
-        }
-        WiredLogger.Info($"Displayed {i} wires.");
-    }
-    private void UpdateWires(UnturnedPlayer player)
-    {
-        EffectManager.ClearEffectByGuid(_resources.wire_2m.GUID, player.Player.channel.owner.transportConnection);
-        EffectManager.ClearEffectByGuid(_resources.wire_4m.GUID, player.Player.channel.owner.transportConnection);
-        EffectManager.ClearEffectByGuid(_resources.wire_6m.GUID, player.Player.channel.owner.transportConnection);
-        EffectManager.ClearEffectByGuid(_resources.wire_8m.GUID, player.Player.channel.owner.transportConnection);
-
-        HashSet<NodeConnection> visited = new HashSet<NodeConnection>();
-
-        int i = 0;
-
-        foreach (var con in _ncs.GetAllConnections())
-        {
-            if (visited.Contains(con)) continue;
-            visited.Add(con);
-
-            i++;
-
-            EffectAsset wire = _resources.wire_8m;
-            float scalemodifier = 1f / 8f;
-            var distance = Vector3.Distance(con.Node1.WireConnectPoint.position, con.Node2.WireConnectPoint.position);
-            if (distance <= 10 && distance > 6)
-            {
-                wire = _resources.wire_8m;
-                scalemodifier = 1f / 8f;
-            }
-            else if (distance <= 6 && distance > 4)
-            {
-                wire = _resources.wire_6m;
-                scalemodifier = 1f / 6f;
-            }
-            else if (distance <= 4 && distance > 2)
-            {
-                wire = _resources.wire_4m;
-                scalemodifier = 1f / 4f;
-            }
-            else
-            {
-                wire = _resources.wire_2m;
-                scalemodifier = 1f / 2f;
-            }
-
-            Vector3 direction = (con.Node2.WireConnectPoint.position - con.Node1.WireConnectPoint.position).normalized;
-
-            TriggerEffectParameters effect = new TriggerEffectParameters
-            {
-                asset = wire,
-                position = con.Node1.WireConnectPoint.position,
-                relevantDistance = 64f,
                 shouldReplicate = true,
                 reliable = true,
                 scale = new Vector3(1f, 1f, distance * scalemodifier)

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Wired.Services;
 using Wired.WiredAssets;
+using Wired.WiredInteractables;
 using Wired.Wrappers;
 
 namespace Wired.Models
@@ -22,7 +23,11 @@ namespace Wired.Models
         /// <summary>
         /// don't use this on a switchnode, Switch(bool state) exists for a reason !
         /// </summary>
-        public void SetPowered(bool state) { }
+        public void SetPowered(bool state)
+        {
+            if(this.TryGetComponent(out LogicGate lg))
+                lg.SetPowered(state);
+        }
         public void Switch(bool state)
         {
             AllowPowerThrough = state;

@@ -27,10 +27,6 @@ internal class NetworkDataDisplay : MonoBehaviour, IWiredInteractable
 
         ElectricNetwork.PowerUpdated += PowerUpdated;
     }
-    private void OnDestroy()
-    {
-        ElectricNetwork.PowerUpdated -= PowerUpdated;
-    }
 
     private void PowerUpdated(ElectricNetwork obj, float time)
     {
@@ -47,6 +43,7 @@ internal class NetworkDataDisplay : MonoBehaviour, IWiredInteractable
     }
     public void Uninitialize()
     {
+        ElectricNetwork.PowerUpdated -= PowerUpdated;
         Destroy(this);
     }
 }

@@ -96,6 +96,7 @@ public class RemoteReceiver : MonoBehaviour, IWiredInteractable
     }
     public void Uninitialize()
     {
+        RemoteTransmitter.OnRemoteTransmissionCommenced -= OnRemoteTransmissionCommenced;
         Destroy(this);
     }
 }

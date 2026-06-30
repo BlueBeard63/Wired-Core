@@ -33,7 +33,6 @@ namespace Wired.Models
 
         public void Uninitialize()
         {
-            Interactable?.Uninitialize();
             Destroy(this);
         }
     }

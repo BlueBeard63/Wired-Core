@@ -63,6 +63,7 @@ public class Keypad : MonoBehaviour, IWiredInteractable
     public void SetPowered(bool state) { }
     public void Uninitialize()
     {
+        KeypadUIService.OnKeypadCodeSubmitted -= KeypadUIService_OnKeypadCodeSubmitted;
         Destroy(this);
     }
 }

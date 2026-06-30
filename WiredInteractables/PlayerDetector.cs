@@ -86,6 +86,7 @@ public class PlayerDetector : MonoBehaviour, IWiredInteractable
     }
     public void Uninitialize()
     {
+        Destroy(_collider);
         Destroy(this);
     }
 }

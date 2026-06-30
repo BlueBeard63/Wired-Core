@@ -64,10 +64,10 @@ namespace Wired.Services
             UnturnedPlayer player = UnturnedPlayer.FromCSteamID(gun.player.channel.owner.playerID.steamID);
             Raycast raycast = new Raycast(gun.player, 16);
 
-            var drop = raycast.GetBarricade(out _, out float distance);
+            var drop = raycast.GetBarricade(out _, out float distance, out LogicGateSubnode lgs);
             if(drop != null)
             {
-                TrySelectNode(player, raycast, drop);
+                TrySelectNode(player, raycast, drop, lgs);
                 return;
             }
         }
@@ -84,7 +84,7 @@ namespace Wired.Services
             return false;
         }
 
-        private void TrySelectNode(UnturnedPlayer player, Raycast raycast, BarricadeDrop barricade)
+        private void TrySelectNode(UnturnedPlayer player, Raycast raycast, BarricadeDrop barricade, LogicGateSubnode lgs)
         {
             if (barricade == null)
             {
@@ -100,12 +100,25 @@ namespace Wired.Services
 
             if (!SelectedNode.ContainsKey(player.CSteamID))
             {
-                OnNodeSelected?.Invoke(player, barricade.model);
-                return;
+                if(lgs != null)
+                {
+                    OnNodeSelected?.Invoke(player, lgs.transform);
+                    return;
+                }
+                else
+                {
+                    OnNodeSelected?.Invoke(player, barricade.model);
+                    return;
+                }
             }
 
             var node1 = SelectedNode[player.CSteamID];
-            var node2 = barricade.model;
+
+            Transform node2;
+            if (lgs != null)
+                node2 = lgs.transform;
+            else
+                node2 = barricade.model;
 
             if (node1 == node2)
             {

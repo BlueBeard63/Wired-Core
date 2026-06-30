@@ -1,5 +1,7 @@
 ﻿using SDG.Unturned;
 using UnityEngine;
+using Wired.Models;
+using Wired.Utilities;
 
 namespace Wired
 {
@@ -13,10 +15,11 @@ namespace Wired
             this.player = player;
             Range = range;
         }
-        public BarricadeDrop GetBarricade(out string colliderName, out float hitDistance)
+        public BarricadeDrop GetBarricade(out string colliderName, out float hitDistance, out LogicGateSubnode lgs)
         {
             colliderName = "";
             hitDistance = 0f;
+            lgs = null;
             Transform aim = player.look.aim;
 
             if (!Physics.Raycast(aim.position, aim.forward, out var hit, Range, RayMasks.BARRICADE_INTERACT))
@@ -24,7 +27,7 @@ namespace Wired
                 return null;
             }
 
-            if (Physics.Raycast(aim.position, aim.forward, out var wallHit, hit.distance - 0.1f, RayMasks.BLOCK_COLLISION))
+            if (Physics.Raycast(aim.position, aim.forward, out _, hit.distance - 0.1f, RayMasks.BLOCK_COLLISION))
             {
                 return null;
             }
@@ -37,6 +40,16 @@ namespace Wired
                 if (targetTransform.name.Contains("Hinge"))
                 {
                     targetTransform = targetTransform.parent.parent;
+                }
+            }
+            if(targetTransform.parent != null && targetTransform.name.StartsWith("Input"))
+            {
+                if(targetTransform.TryGetComponent(out LogicGateSubnode lgsn))
+                {
+                    lgs = lgsn;
+                    colliderName = targetTransform.name;
+
+                    targetTransform = targetTransform.parent;
                 }
             }
             if(targetTransform.parent != null && targetTransform.name == "Clip")

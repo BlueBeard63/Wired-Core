@@ -120,6 +120,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Commands\WiredCommand.cs" />
+    <Compile Include="Models\LogicGateSubnode.cs" />
     <Compile Include="Services\JsonService.cs" />
     <Compile Include="Services\KeypadUIService.cs" />
     <Compile Include="Services\WiredAssetsService.cs" />
@@ -127,6 +128,7 @@
     <Compile Include="WiredAssets\Placeables\BatteryChargerAsset.cs" />
     <Compile Include="WiredAssets\Items\EngineerGogglesAsset.cs" />
     <Compile Include="WiredAssets\Items\ManualTabletAsset.cs" />
+    <Compile Include="WiredAssets\Placeables\LogicGateAsset.cs" />
     <Compile Include="WiredAssets\Placeables\SolarPanelAsset.cs" />
     <Compile Include="WiredAssets\Placeables\NetworkDataDisplayAsset.cs" />
     <Compile Include="WiredAssets\Placeables\ConsumerAsset.cs" />
