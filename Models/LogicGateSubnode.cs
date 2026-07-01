@@ -14,7 +14,7 @@ namespace Wired.Models;
 /// </summary>
 public class LogicGateSubnode : MonoBehaviour, IElectricNode
 {
-    public uint InstanceID { get; set; }
+    public uint InstanceID => ParentNode.InstanceID;
 
     public IWiredAsset Asset { get; set; }
 
@@ -27,24 +27,25 @@ public class LogicGateSubnode : MonoBehaviour, IElectricNode
     public Transform WireConnectPoint { get; set; }
 
     public LogicGate ParentNode { get; set; }
+    private SphereCollider _col;
 
     public void SetPowered(bool powered)
     {
         IsPowered = powered;
     }
 
-    private void Awake()
+    private void Start()
     {
         WireConnectPoint = this.transform;
         IsPowered = false;
-        ParentNode = this.GetComponent<LogicGate>();
-        var col = this.gameObject.AddComponent<SphereCollider>();
-        col.isTrigger = true;
-        col.radius = 0.1f;
+        _col = this.gameObject.AddComponent<SphereCollider>();
+        _col.isTrigger = true;
+        _col.radius = 0.1f;
     }
 
     public void Uninitialize()
     {
-
+        Destroy(_col);
+        Destroy(this);
     }
 }

@@ -373,8 +373,9 @@ public class PlayerViewService : MonoBehaviour
                 sendEffectCool(player, t.position, _resources.node_gate);
                 if(gn.TryGetComponent(out LogicGate lg))
                 {
-                    sendEffectCool(player, lg.Input0, _resources.node_subnode);
-                    sendEffectCool(player, lg.Input1, _resources.node_subnode);
+                    sendEffectCool(player, lg.Input0Position, _resources.node_subnode);
+                    if(lg.Type != LogicGateType.NOT)
+                        sendEffectCool(player, lg.Input1Position, _resources.node_subnode);
                 }
             }
             else if (node is TimerNode)

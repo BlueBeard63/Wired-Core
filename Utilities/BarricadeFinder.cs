@@ -12,6 +12,18 @@ namespace Wired
         {
             _position = position;
         }
+        public BarricadeDrop GetBarricadeByInstanceID(uint instanceID)
+        {
+            foreach(BarricadeRegion reg in BarricadeManager.regions)
+            {
+                foreach(BarricadeDrop bar in reg.drops)
+                {
+                    if(bar.instanceID == instanceID)
+                        return bar;
+                }
+            }
+            return null;
+        }
 
         public List<BarricadeDrop> GetBarricadesInRadius(float radius = 0)
         {

@@ -8,6 +8,7 @@ using System.Linq;
 using UnityEngine;
 using Wired.Models;
 using Wired.Utilities;
+using Wired.WiredInteractables;
 
 namespace Wired.Services
 {
@@ -51,19 +52,34 @@ namespace Wired.Services
                 reverseLookup[kvp.Value] = kvp.Key;
             }
 
-            var allConnections = _service.GetAllConnections();
             var dataToSave = new List<SavedConnectionData>();
 
-            foreach (var conn in allConnections)
+            foreach (var conn in _service.GetAllConnections())
             {
                 if (reverseLookup.TryGetValue(conn.Node1, out uint id1) &&
                     reverseLookup.TryGetValue(conn.Node2, out uint id2))
                 {
+                    string additionalData = "";
+                    if (conn.Node1 is LogicGateSubnode n1)
+                    {
+                        if (n1 == n1.ParentNode.Input0)
+                            additionalData += "Node1_is_Input_0";
+                        if (n1 == n1.ParentNode.Input1)
+                            additionalData += "Node1_is_Input_1";
+                    }
+                    if (conn.Node2 is LogicGateSubnode n2)
+                    {
+                        if(n2 == n2.ParentNode.Input0)
+                            additionalData += "Node2_is_Input_0";
+                        if(n2 == n2.ParentNode.Input1)
+                            additionalData += "Node2_is_Input_1";
+                    }
                     dataToSave.Add(new SavedConnectionData
                     {
                         Node1ID = id1,
                         Node2ID = id2,
-                        WirePath = conn.WirePath.Select(v => new float[] { v.x, v.y, v.z }).ToList()
+                        WirePath = conn.WirePath.Select(v => new float[] { v.x, v.y, v.z }).ToList(),
+                        AdditionalData = additionalData
                     });
                 }
             }
@@ -89,7 +105,6 @@ namespace Wired.Services
 
             if (string.IsNullOrEmpty(_savepath) || !File.Exists(_savepath))
             {
-                WiredLogger.Error("savepath null???????????????????????????");
                 return;
             }
 
@@ -112,7 +127,24 @@ namespace Wired.Services
                         .Select(arr => new Vector3(arr[0], arr[1], arr[2]))
                         .ToList() ?? new List<Vector3>();
 
-                    _service.LoadConnection(node1, node2, path);
+                    if (data.AdditionalData.Contains("Node1_is_Input_0"))
+                    {
+                        node1 = ((GateNode)node1).GetComponent<LogicGate>().Input0;
+                    }
+                    if (data.AdditionalData.Contains("Node1_is_Input_1"))
+                    {
+                        node1 = ((GateNode)node1).GetComponent<LogicGate>().Input1;
+                    }
+                    if (data.AdditionalData.Contains("Node2_is_Input_0"))
+                    {
+                        node2 = ((GateNode)node2).GetComponent<LogicGate>().Input0;
+                    }
+                    if (data.AdditionalData.Contains("Node2_is_Input_1"))
+                    {
+                        node2 = ((GateNode)node2).GetComponent<LogicGate>().Input1;
+                    }
+
+                    _service.LoadConnection(node1, node2, path, data.AdditionalData);
                     restoredCount++;
                 }
                 else
@@ -136,6 +168,8 @@ namespace Wired.Services
         public uint Node1ID;
         [SerializeField]
         public uint Node2ID;
+        [SerializeField] 
+        public string AdditionalData;
         [SerializeField]
         public List<float[]> WirePath;
     }

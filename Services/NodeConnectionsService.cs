@@ -38,6 +38,20 @@ namespace Wired.Services
 
         public void NodeDestroyed(IElectricNode node)
         {
+            if(node is GateNode gn)
+            {
+                if(gn.TryGetComponent(out LogicGate lg))
+                {
+                    foreach (var n in GetAllConnections().Where(con => (object)con.Node1 == lg.Input0 || (object)con.Node2 == lg.Input0))
+                    {
+                        DisconnectNodes(null, n);
+                    }
+                    foreach (var n in GetAllConnections().Where(con => (object)con.Node1 == lg.Input1 || (object)con.Node2 == lg.Input1))
+                    {
+                        DisconnectNodes(null, n);
+                    }
+                }
+            }
             foreach (var n in GetAllConnections().Where(con => con.Node1 == node || con.Node2 == node))
             {
                 DisconnectNodes(null, n);
@@ -116,9 +130,14 @@ namespace Wired.Services
         {
             return Networks.SelectMany(n => n.Connections).ToList();
         }
-        public Dictionary<uint, IElectricNode> GetAllNodes()
+        public List<KeyValuePair<uint, IElectricNode>> GetAllNodes()
         {
-            return _nodeToNetwork.ToDictionary(kvp => kvp.Key.InstanceID, kvp => kvp.Key);
+            List<KeyValuePair<uint, IElectricNode>> result = new();
+            foreach(var key in _nodeToNetwork.Keys)
+            {
+                result.Add(new KeyValuePair<uint, IElectricNode>(key.InstanceID, key));
+            }
+            return result;
         }
 
         private void OnNodeLinkRequested(UnturnedPlayer player, IElectricNode node1, IElectricNode node2, List<Vector3> wirepath)
@@ -135,7 +154,7 @@ namespace Wired.Services
             }
         }
 
-        public void LoadConnection(IElectricNode node1, IElectricNode node2, List<Vector3> wirePath)
+        public void LoadConnection(IElectricNode node1, IElectricNode node2, List<Vector3> wirePath, string additionalData)
         {
             ConnectNodes(null, node1, node2, wirePath);
         }

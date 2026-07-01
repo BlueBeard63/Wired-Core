@@ -15,7 +15,7 @@ namespace Wired.Models
         public bool IsPowered { get; set; }
         public IWiredAsset Asset { get; set; }
         public float Consumption { get; set; }
-        public bool AllowPowerThrough { get; private set; }
+        public bool AllowPowerThrough { get; set; }
         public bool SwitchableByPlayer { get; set; } = false;
         public Transform WireConnectPoint { get; set; }
 
@@ -38,6 +38,8 @@ namespace Wired.Models
         }
         public void Uninitialize()
         {
+            if (this.TryGetComponent(out LogicGate lg))
+                lg.Uninitialize();
             Destroy(this);
         }
         private void Awake()

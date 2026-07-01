@@ -112,7 +112,7 @@ namespace Wired
         private void Update()
         {
             if (!_levelLoaded) return;
-            if (fpr < 2)
+            if (fpr < Configuration.Instance.RecalculationRateLimit)
                 fpr++;
             else
             {
