@@ -15,10 +15,10 @@ namespace Wired.Services
     public class WiredAssetsService
     {
 
-        public Dictionary<Guid, IWiredAsset> WiredAssets = new Dictionary<Guid, IWiredAsset>();
+        public Dictionary<Guid, IWiredAsset> WiredAssets = [];
 
-        private List<IWiredAsset> _defaultAssets = new List<IWiredAsset>() // Vanilla assets, probly gotta put this in a config
-        {
+        private readonly List<IWiredAsset> _defaultAssets = // Vanilla assets, probly gotta put this in a config
+        [
             new GeneratorAsset(new Guid("dc56734a150849e785975751364d41de"), 2800), // Industrial Generator
             new GeneratorAsset(new Guid("72fae83175f34bde94bd52d40c7a9ebc"), 400), // Portable Generator
 
@@ -31,7 +31,7 @@ namespace Wired.Services
             new ConsumerAsset(new Guid("ea56c734f3614983a5381bbce91ba79a"), 400), // Oxygenator
 
             new EngineerGogglesAsset(new Guid("778e144e9b324e68970470e1be9c3167")), // Civilian nightvision masterbundle override, DELETE LATER!!!!!!!!!!!!
-        };
+        ];
         public WiredAssetsService()
         {
             WiredAssets.Concat(_defaultAssets.ToDictionary(a => a.GUID, a => a));
@@ -48,20 +48,21 @@ namespace Wired.Services
         }
         private void PopulateAssets()
         {
-            List<ItemAsset> items = new List<ItemAsset>();
+            List<ItemAsset> items = [];
             Assets.find(items);
 
             foreach (ItemAsset asset in items)
             {
-                AssetParser parser = new AssetParser(asset.getFilePath());
-                string[] stringstoparse = new string[] {
+                AssetParser parser = new(asset.getFilePath());
+                string[] stringstoparse = 
+                [
                     "WiredType WiringTool",
                     "WiredType RemoteTool",
                     "WiredType ManualTablet",
                     "WiredType Consumer",
                     "WiredType Supplier",
                     "WiredType Gate",
-                };
+                ];
                 if (parser.HasAnyEntry(stringstoparse, out var foundentry))
                 {
                     WiredLogger.Info($"Found wired asset: {asset.name} ({asset.GUID}) as {foundentry}");
@@ -185,15 +186,6 @@ namespace Wired.Services
             }
 
             WiredAssets.Add(asset.GUID, new GeneratorAsset(asset.GUID, supply));
-        }
-        private bool IsConsumer(Transform model)
-        {
-            if (model == null) return false;
-            return model.GetComponent<InteractableSpot>() != null ||
-                   model.GetComponent<InteractableOven>() != null ||
-                   model.GetComponent<InteractableOxygenator>() != null ||
-                   model.GetComponent<InteractableSafezone>() != null ||
-                   model.GetComponent<InteractableCharge>() != null;
         }
     }
 }

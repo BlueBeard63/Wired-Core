@@ -23,7 +23,7 @@ namespace Wired.Services
             WiredAssetsService = new WiredAssetsService();
             NodeInitializationService = new NodeInitializationService(WiredAssetsService);
             NodeConnectionsService = new NodeConnectionsService();
-            WiringToolService = new WiringToolService(WiredAssetsService);
+            WiringToolService = new WiringToolService(WiredAssetsService, NodeConnectionsService);
             PlayerViewService = new GameObject("PlayerViewService").AddComponent<PlayerViewService>();
             PlayerViewService.Init(WiredAssetsService, resources, NodeConnectionsService, WiringToolService.SelectedNode);
             KeypadUIService = new KeypadUIService();

@@ -10,8 +10,8 @@ namespace Wired.Models
 {
     public class ElectricNetwork
     {
-        public HashSet<IElectricNode> Nodes { get; private set; } = new HashSet<IElectricNode>();
-        public HashSet<NodeConnection> Connections { get; private set; } = new HashSet<NodeConnection>();
+        public HashSet<IElectricNode> Nodes { get; private set; } = [];
+        public HashSet<NodeConnection> Connections { get; private set; } = [];
 
 
         public float TotalSupply { get; private set; }
@@ -45,10 +45,10 @@ namespace Wired.Models
             _recalculationPending = false;
             _frameLocked = true;
 
-            Stopwatch sw = new Stopwatch();
+            Stopwatch sw = new();
             sw.Start();
 
-            HashSet<IElectricNode> visited = new HashSet<IElectricNode>();
+            HashSet<IElectricNode> visited = [];
 
             var adjacencyMap = BuildAdjacencyMap();
 
@@ -57,11 +57,11 @@ namespace Wired.Models
                 if (visited.Contains(startNode))
                     continue;
 
-                List<IElectricNode> islandNodes = new List<IElectricNode>();
+                List<IElectricNode> islandNodes = [];
                 float currentIslandSupply = 0f;
                 float currentIslandConsumption = 0f;
 
-                Queue<IElectricNode> queue = new Queue<IElectricNode>();
+                Queue<IElectricNode> queue = new();
                 queue.Enqueue(startNode);
                 visited.Add(startNode);
 
@@ -112,7 +112,7 @@ namespace Wired.Models
             PowerUpdated?.Invoke(this, sw.ElapsedTicks/10000f);
 
             sw.Stop();
-            WiredLogger.Info($"Recalculated power flow in a {Nodes.Count}-node network, took {sw.ElapsedTicks/10000f} ms.");
+            //WiredLogger.Info($"Recalculated power flow in a {Nodes.Count}-node network, took {sw.ElapsedTicks / 10000f} ms.");
         }
 
         private Dictionary<IElectricNode, List<IElectricNode>> BuildAdjacencyMap()
@@ -121,8 +121,8 @@ namespace Wired.Models
 
             foreach (var conn in Connections)
             {
-                if (!map.ContainsKey(conn.Node1)) map[conn.Node1] = new List<IElectricNode>();
-                if (!map.ContainsKey(conn.Node2)) map[conn.Node2] = new List<IElectricNode>();
+                if (!map.ContainsKey(conn.Node1)) map[conn.Node1] = [];
+                if (!map.ContainsKey(conn.Node2)) map[conn.Node2] = [];
 
                 map[conn.Node1].Add(conn.Node2);
                 map[conn.Node2].Add(conn.Node1);

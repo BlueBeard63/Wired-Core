@@ -18,10 +18,8 @@ public class SolarPanel : MonoBehaviour, IWiredInteractable
 
     public bool IsOn { get; }
 
-    private float _azimuth;
-    private float _bias;
-
     public Vector3 PanelNormal;
+    private Transform PanelNormalTransform;
     public Transform MovingPart;
     private Transform _MovingPartGameobj;
 
@@ -54,6 +52,7 @@ public class SolarPanel : MonoBehaviour, IWiredInteractable
             if (pn != null)
             {
                 PanelNormal = pn.forward;
+                PanelNormalTransform = pn;
             }
             else
             {
@@ -71,17 +70,17 @@ public class SolarPanel : MonoBehaviour, IWiredInteractable
         if(barricade.model == MovingPart)
         {
             shouldAllow = false;
-            BarricadeManager.tryGetRegion(this.transform, out byte x, out byte y, out ushort plant, out BarricadeRegion region);
+            BarricadeManager.tryGetRegion(this.transform, out byte x, out byte y, out ushort plant, out _);
             BarricadeManager.destroyBarricade(BarricadeManager.FindBarricadeByRootTransform(this.transform), x, y, plant);
 
-            BarricadeManager.tryGetRegion(MovingPart, out x, out y, out plant, out region);
+            BarricadeManager.tryGetRegion(MovingPart, out x, out y, out plant, out _);
             BarricadeManager.destroyBarricade(BarricadeManager.FindBarricadeByRootTransform(MovingPart), x, y, plant);
 
             ItemTool.tryForceGiveItem(instigatorClient.player, (Assets.find(this.Asset.GUID) as ItemAsset).id, 1);
         }
         else if(barricade.model == this.transform)
         {
-            BarricadeManager.tryGetRegion(MovingPart, out byte x, out byte y, out ushort plant, out BarricadeRegion region);
+            BarricadeManager.tryGetRegion(MovingPart, out byte x, out byte y, out ushort plant, out _);
             BarricadeManager.destroyBarricade(BarricadeManager.FindBarricadeByRootTransform(MovingPart), x, y, plant);
         }
     }
@@ -112,7 +111,7 @@ public class SolarPanel : MonoBehaviour, IWiredInteractable
         var efficiency = GetSolarPanelEfficiency(sunangle);
 
         var newsupply = Asset.Supply * efficiency;
-        _supplierNode.Supply = newsupply;
+        _supplierNode.Supply = (float)Math.Round(newsupply);
         if(newsupply <= 0f && _supplierNode.IsPowered)
         {
             _supplierNode.SetPowered(false);
@@ -137,6 +136,10 @@ public class SolarPanel : MonoBehaviour, IWiredInteractable
         if(Asset.HasMovingPart)
         {
             PanelNormal = new Vector3(-MovingPart.forward.x, MovingPart.forward.y, -MovingPart.forward.z);
+        }
+        else
+        {
+            PanelNormal = PanelNormalTransform.forward;
         }
 
         float dot = Vector3.Dot(PanelNormal, sunDirection.normalized);

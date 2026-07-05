@@ -1,29 +1,22 @@
 ﻿using Rocket.Unturned.Player;
 using SDG.Unturned;
 using Steamworks;
+using System;
+using System.Linq;
 using UnityEngine;
 using Wired.Utilities;
 using Wired.WiredInteractables;
 
 namespace Wired.Wrappers
 {
-    public class ConsumerInteractable
+    public class ConsumerInteractable(Transform barricade)
     {
-        private InteractableSpot _spot;
-        private InteractableOven _oven;
-        private InteractableOxygenator _oxygenator;
-        private InteractableSafezone _safezone;
-        private InteractableCharge _charge;
-        private IWiredInteractable _wiredInteractable;
-        public ConsumerInteractable(Transform barricade)
-        {
-            _wiredInteractable = barricade.GetComponent<IWiredInteractable>();
-            _spot = barricade.GetComponent<InteractableSpot>();
-            _oven = barricade.GetComponent<InteractableOven>();
-            _oxygenator = barricade.GetComponent<InteractableOxygenator>();
-            _safezone = barricade.GetComponent<InteractableSafezone>();
-            _charge = barricade.GetComponent<InteractableCharge>();
-        }
+        private readonly InteractableSpot _spot = barricade.GetComponent<InteractableSpot>();
+        private readonly InteractableOven _oven = barricade.GetComponent<InteractableOven>();
+        private readonly InteractableOxygenator _oxygenator = barricade.GetComponent<InteractableOxygenator>();
+        private readonly InteractableSafezone _safezone = barricade.GetComponent<InteractableSafezone>();
+        private readonly InteractableCharge _charge = barricade.GetComponent<InteractableCharge>();
+        private readonly IWiredInteractable _wiredInteractable = barricade.GetComponent<IWiredInteractable>();
 
         public void SetPowered(bool powered)
         {
@@ -37,9 +30,10 @@ namespace Wired.Wrappers
             {
                 BarricadeManager.ServerSetSpotPowered(_spot, powered);
 
-                if (!_spot.isWired)
+                BarricadeFinder finder = new(position: _spot.transform.position);
+                if (finder.GetBarricadesInRadius(radius: 256).Any(b => b.asset.GUID == new Guid("101d13181ef1407ca583686f36663a0f")))
                 {
-                    Barricade bar = new Barricade(Plugin.Instance.Resources.generator_technical);
+                    Barricade bar = new(Plugin.Instance.Resources.generator_technical);
                     Transform gen = BarricadeManager.dropNonPlantedBarricade(bar, _spot.transform.position, _spot.transform.rotation, 0, 0);
                     if (gen != null)
                     {
@@ -58,6 +52,8 @@ namespace Wired.Wrappers
             if (_charge != null && powered == true)
                 _charge.Detonate(null);
         }
+
+        
         public void Uninitialize()
         {
             _wiredInteractable?.Uninitialize();

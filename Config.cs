@@ -5,16 +5,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Wired
+namespace Wired;
+
+public class Config : IRocketPluginConfiguration, IDefaultable
 {
-    public class Config : IRocketPluginConfiguration, IDefaultable
+    public bool LogDebugMessages;
+    public ushort RecalculationRateLimit;
+    public void LoadDefaults()
     {
-        public bool LogDebugMessages;
-        public ushort RecalculationRateLimit;
-        public void LoadDefaults()
-        {
-            RecalculationRateLimit = 1;
-            LogDebugMessages = true;
-        }
+        RecalculationRateLimit = 1;
+        LogDebugMessages = true;
     }
 }

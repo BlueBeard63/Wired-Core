@@ -17,7 +17,7 @@ public class TimerNode : MonoBehaviour, IElectricNode
     public ushort DelaySeconds { get; set; }
     public bool AllowPowerThrough { get; private set; }
     public Transform WireConnectPoint { get; set; }
-
+    public BarricadeDrop barricade { get; set; }
     private bool _isCountingDown;
 
     private InteractableSign _display;
@@ -101,9 +101,6 @@ public class TimerNode : MonoBehaviour, IElectricNode
         int totalSeconds = (int)_remainingTime;
         int minutes = totalSeconds / 60;
         int seconds = totalSeconds % 60;
-
-        int msTenths = (int)((_remainingTime - totalSeconds) * 10f);
-        if (msTenths < 0) msTenths = 0;
 
         string formattedTime = $"{minutes:D2}:{seconds:D2}";
 

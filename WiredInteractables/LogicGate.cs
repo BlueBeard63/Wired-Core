@@ -64,18 +64,20 @@ public class LogicGate : MonoBehaviour, IWiredInteractable
         {
             Input0 = this.transform.Find("Input_0").gameObject.AddComponent<LogicGateSubnode>();
             Input0.ParentNode = this;
+            Input0.barricade = this._gateNode.barricade;
         }
         if(this.transform.Find("Input_1") != null)
         {
             Input1 = this.transform.Find("Input_1").gameObject.AddComponent<LogicGateSubnode>();
             Input1.ParentNode = this;
+            Input1.barricade = this._gateNode.barricade;
         }
     }
 
     public void Uninitialize()
     {
-        Input0.Uninitialize();
-        Input1.Uninitialize();
+        Input0?.Uninitialize();
+        Input1?.Uninitialize();
         Destroy(this);
     }
 }

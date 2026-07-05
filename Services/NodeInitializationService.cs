@@ -25,7 +25,7 @@ namespace Wired.Services
             _assets = resources;
             BarricadeManager.onBarricadeSpawned += OnBarricadeSpawned;
 
-            BarricadeFinder bf = new BarricadeFinder();
+            BarricadeFinder bf = new();
             foreach (BarricadeRegion reg in BarricadeManager.regions)
             {
                 for (int i = 0; i < reg.drops.Count; i++)
@@ -47,7 +47,7 @@ namespace Wired.Services
 
         private void TryInitializeBarricade(BarricadeDrop barricade)
         {
-            AssetParser assetParser = new AssetParser(barricade.asset.getFilePath());
+            AssetParser assetParser = new(barricade.asset.getFilePath());
             if (assetParser.TryGetBool("Wired_Create_Node", out bool value))
             {
                 if (!value) return;
@@ -69,6 +69,7 @@ namespace Wired.Services
             {
                 case SwitchAsset switchAsset:
                     var sw = barricade.model.gameObject.AddComponent<GateNode>();
+                    sw.barricade = barricade;
                     sw.Asset = switchAsset;
                     sw.SetPowered(false);
                     sw.SwitchableByPlayer = true;
@@ -77,8 +78,9 @@ namespace Wired.Services
 
                 case LogicGateAsset logicGate:
                     var gn = barricade.model.gameObject.AddComponent<GateNode>();
+                    gn.barricade = barricade;
                     gn.Asset = logicGate;
-                    gn.SetPowered(false);
+                    gn.Switch(false);
                     gn.SwitchableByPlayer = false;
                     var lg = gn.gameObject.AddComponent<LogicGate>();
                     lg.Type = logicGate.Type;
@@ -86,6 +88,7 @@ namespace Wired.Services
                 
                 case ConnectorAsset connectorAsset:
                     var cn = barricade.model.gameObject.AddComponent<GateNode>();
+                    cn.barricade = barricade;
                     cn.Asset = connectorAsset;
                     cn.Switch(true);
                     createdNode = cn;
@@ -109,6 +112,7 @@ namespace Wired.Services
 
                 case TimerAsset timerAsset:
                     var timer = barricade.model.gameObject.AddComponent<TimerNode>();
+                    timer.barricade = barricade;
                     timer.Asset = timerAsset;
                     timer.SetPowered(false);
                     timer.DelaySeconds = (ushort)Math.Round(timerAsset.DelaySeconds);
@@ -118,6 +122,7 @@ namespace Wired.Services
 
                 case GeneratorAsset supplierAsset:
                     var sup = barricade.model.gameObject.AddComponent<SupplierNode>();
+                    sup.barricade = barricade;
                     sup.Asset = supplierAsset;
                     sup.Supply = supplierAsset.Supply;
                     createdNode = sup;
@@ -125,6 +130,7 @@ namespace Wired.Services
 
                 case SolarPanelAsset solarPanelAsset:
                     var supplier = barricade.model.gameObject.AddComponent<SupplierNode>();
+                    supplier.barricade = barricade;
                     var solar = barricade.model.gameObject.AddComponent<SolarPanel>();
                     solar.Asset = solarPanelAsset;
                     supplier.Asset = solarPanelAsset;
@@ -166,6 +172,7 @@ namespace Wired.Services
 
                 case ConsumerAsset consumerAsset:
                     var cons = barricade.model.gameObject.AddComponent<ConsumerNode>();
+                    cons.barricade = barricade;
                     cons.Asset = consumerAsset;
                     cons.SetPowered(false);
                     cons.Consumption = consumerAsset.Consumption;
@@ -174,6 +181,7 @@ namespace Wired.Services
 
                 case NetworkDataDisplayAsset networkDataDisplayAsset:
                     var ndaa = barricade.model.gameObject.AddComponent<ConsumerNode>();
+                    ndaa.barricade = barricade;
                     barricade.model.gameObject.AddComponent<NetworkDataDisplay>();
                     ndaa.Asset = networkDataDisplayAsset;
                     ndaa.SetPowered(false);
@@ -182,6 +190,7 @@ namespace Wired.Services
 
                 case BatteryChargerAsset batteryChargerAsset:
                     var bca = barricade.model.gameObject.AddComponent<ConsumerNode>();
+                    bca.barricade = barricade;
                     barricade.model.gameObject.AddComponent<BatteryCharger>();
                     bca.Asset = batteryChargerAsset;
                     bca.SetPowered(false);
@@ -198,6 +207,7 @@ namespace Wired.Services
         private GateNode InitializeKeypad(BarricadeDrop barricade, KeypadAsset keypadAsset)
         {
             var sw = barricade.model.gameObject.AddComponent<GateNode>();
+            sw.barricade = barricade;
             sw.SetPowered(false);
             sw.SwitchableByPlayer = false;
 
@@ -209,6 +219,8 @@ namespace Wired.Services
         private GateNode InitializePlayerDetector(BarricadeDrop barricade, PlayerDetectorAsset asset)
         {
             var sw = barricade.model.gameObject.AddComponent<GateNode>();
+            sw.barricade = barricade;
+
             sw.SetPowered(false);
             sw.SwitchableByPlayer = false;
 
@@ -232,6 +244,8 @@ namespace Wired.Services
         private GateNode InitializeRemoteReceiver(BarricadeDrop barricade, RemoteReceiverAsset asset)
         {
             var sw = barricade.model.gameObject.AddComponent<GateNode>();
+            sw.barricade = barricade;
+
             sw.SetPowered(false);
             sw.SwitchableByPlayer = false;
             barricade.model.gameObject.AddComponent<RemoteReceiver>();
@@ -242,6 +256,8 @@ namespace Wired.Services
         {
             barricade.model.gameObject.AddComponent<RemoteTransmitter>().Range = asset.Range;
             var cons = barricade.model.gameObject.AddComponent<ConsumerNode>();
+            cons.barricade = barricade;
+            
             cons.SetPowered(false);
             cons.Consumption = asset.Consumption;
             return cons;
@@ -251,8 +267,9 @@ namespace Wired.Services
         {
             if (barricade.model.TryGetComponent(out InteractableGenerator _))
             {
-                AssetParser parser = new AssetParser(barricade.asset.getFilePath());
+                AssetParser parser = new(barricade.asset.getFilePath());
                 var node = barricade.model.gameObject.AddComponent<SupplierNode>();
+                node.barricade = barricade;
                 node.SetPowered(false);
                 if (parser.TryGetFloat("Power_Supply", out float supply))
                     node.Supply = supply;
@@ -263,8 +280,9 @@ namespace Wired.Services
 
             if (IsConsumer(barricade.model))
             {
-                AssetParser parser = new AssetParser(barricade.asset.getFilePath());
+                AssetParser parser = new(barricade.asset.getFilePath());
                 var node = barricade.model.gameObject.AddComponent<ConsumerNode>();
+                node.barricade = barricade;
                 node.SetPowered(false);
 
                 if (parser.TryGetFloat("Power_Consumption", out float consumption))

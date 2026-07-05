@@ -45,8 +45,10 @@ namespace Wired
 
         public ItemBarricadeAsset generator_technical;
 
-        public List<Guid> nodeeffects = new List<Guid>();
-        public List<Guid> previeweffects = new List<Guid>();
+        public List<Guid> nodeeffects = [];
+        public List<Guid> previeweffects = [];
+        public List<Guid> selectedeffects = [];
+        
         public const short GogglesUIKey = 15302;
 
         public Resources()
@@ -74,7 +76,7 @@ namespace Wired
             node_subnode = (EffectAsset)Assets.find(new Guid("938c3fc3216d487cb71475f90ae603e1"));
             node_subnode_selected = (EffectAsset)Assets.find(new Guid("e4715014f5db48aba52ee7c4ab74f8d0"));
             path_subnode = (EffectAsset)Assets.find(new Guid("58a4907b17bc4b3785b468adf0346bff"));
-            preview_subnode = (EffectAsset)Assets.find(new Guid("d9eac6e465944769b37a3cc8f605a499"));
+            preview_subnode = (EffectAsset)Assets.find(new Guid("2891600a49e145bfa3c1ef914a83d9ad"));
 
             goggles_ui = (EffectAsset)Assets.find(new Guid("1b826f8e3be1454384a6130f3298ddf9"));
 
@@ -96,15 +98,16 @@ namespace Wired
             nodeeffects.Add(path_timer.GUID);
             nodeeffects.Add(path_subnode.GUID);
 
-            previeweffects.Add(node_consumer_selected.GUID);
-            previeweffects.Add(node_power_selected.GUID);
-            previeweffects.Add(node_gate_selected.GUID);
-            previeweffects.Add(node_timer_selected.GUID);
-            previeweffects.Add(node_subnode_selected.GUID);
+            selectedeffects.Add(node_consumer_selected.GUID);
+            selectedeffects.Add(node_power_selected.GUID);
+            selectedeffects.Add(node_gate_selected.GUID);
+            selectedeffects.Add(node_timer_selected.GUID);
+            selectedeffects.Add(node_subnode_selected.GUID);
             previeweffects.Add(preview_consumer.GUID);
             previeweffects.Add(preview_power.GUID);
             previeweffects.Add(preview_gate.GUID);
             previeweffects.Add(preview_timer.GUID);
+            previeweffects.Add(preview_subnode.GUID);
         }
     }
 }

@@ -14,6 +14,7 @@ namespace Wired.Models
         public float Consumption { get; set; }
         public bool AllowPowerThrough { get; set; } = true;
         public Transform WireConnectPoint { get; set; }
+        public BarricadeDrop barricade { get; set; }
 
         private ConsumerInteractable Interactable;
         public void SetPowered(bool powered)

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SDG.Unturned;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -23,9 +24,11 @@ public class LogicGateSubnode : MonoBehaviour, IElectricNode
     public float Consumption { get; set; }
 
     public bool AllowPowerThrough { get; set; } = false;
+    
+    public bool IsBusy { get; set; }
 
     public Transform WireConnectPoint { get; set; }
-
+    public BarricadeDrop barricade { get; set; }
     public LogicGate ParentNode { get; set; }
     private SphereCollider _col;
 

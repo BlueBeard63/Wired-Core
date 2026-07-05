@@ -19,7 +19,7 @@ namespace Wired.Models
         public bool AllowPowerThrough { get; } = true;
         public float Supply { get; set; }
         public Transform WireConnectPoint { get; set; }
-
+        public BarricadeDrop barricade { get; set; }
 
         private Interactable _interactable;
         public void SetPowered(bool powered)

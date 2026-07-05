@@ -13,6 +13,8 @@ using System.Reflection;
 using Rocket.Unturned.Commands;
 using Rocket.Unturned;
 using Wired.WiredInteractables;
+using Rocket.Core.Assets;
+using Newtonsoft.Json.Linq;
 
 namespace Wired.Services;
 
@@ -22,9 +24,9 @@ public class PlayerViewService : MonoBehaviour
     private Resources _resources;
     private NodeConnectionsService _ncs;
     private Dictionary<CSteamID, Transform> _selectedNode;
-    private Dictionary<CSteamID, uint> _lookingAt = new Dictionary<CSteamID, uint>();
-    private readonly HashSet<UnturnedPlayer> _playersInLinkingMode = new HashSet<UnturnedPlayer>();
-    private readonly HashSet<UnturnedPlayer> _playersWithGogglesOn = new HashSet<UnturnedPlayer>();
+    private readonly Dictionary<CSteamID, uint> _lookingAt = [];
+    private readonly HashSet<UnturnedPlayer> _playersInLinkingMode = [];
+    private readonly HashSet<UnturnedPlayer> _playersWithGogglesOn = [];
     public void Init(WiredAssetsService assets, Resources resources, NodeConnectionsService ncs, Dictionary<CSteamID, Transform> selectedNode)
     {
         WiringToolService.OnNodeSelected += OnNodeSelected;
@@ -78,7 +80,7 @@ public class PlayerViewService : MonoBehaviour
 
             Vector3 direction = (con.Node2.WireConnectPoint.position - con.Node1.WireConnectPoint.position).normalized;
 
-            TriggerEffectParameters effect = new TriggerEffectParameters
+            TriggerEffectParameters effect = new()
             {
                 asset = wire,
                 position = con.Node1.WireConnectPoint.position,
@@ -127,8 +129,19 @@ public class PlayerViewService : MonoBehaviour
     {
         UpdateWires();
         if (player == null) return;
-
         UpdateNodesView(player.CSteamID);
+
+        foreach (var steamplayer in Provider.clients)
+        {
+            if (steamplayer.playerID.steamID == player.CSteamID) continue;
+            var equipment = UnturnedPlayer.FromSteamPlayer(steamplayer).Player.equipment.asset;
+            if (equipment == null)
+                continue;
+            if (_assets.WiredAssets.ContainsKey(equipment.GUID) && _assets.WiredAssets[equipment.GUID] is WiringToolAsset)
+                UpdateNodesView(steamplayer.playerID.steamID);
+
+        }
+
         ClearPreviewView(player.CSteamID);
         _lookingAt[player.CSteamID] = 0;
         _playersInLinkingMode.Remove(player);
@@ -138,7 +151,20 @@ public class PlayerViewService : MonoBehaviour
     {
         UpdateNodesView(player.CSteamID);
         UpdateWires();
+
+        foreach (var steamplayer in Provider.clients)
+        {
+            if (steamplayer.playerID.steamID == player.CSteamID) continue;
+            var equipment = UnturnedPlayer.FromSteamPlayer(steamplayer).Player.equipment.asset;
+            if (equipment == null)
+                continue;
+            if (_assets.WiredAssets.ContainsKey(equipment.GUID) && _assets.WiredAssets[equipment.GUID] is WiringToolAsset)
+                UpdateNodesView(steamplayer.playerID.steamID);
+
+        }
+
         ClearPreviewView(player.CSteamID);
+        ClearSelectedView(player.CSteamID);
         _lookingAt[player.CSteamID] = 0;
         _playersInLinkingMode.Remove(player);
     }
@@ -162,6 +188,18 @@ public class PlayerViewService : MonoBehaviour
         {
             UpdateNodesView(player.channel.owner.playerID.steamID);
         }
+        else
+        {
+            player.ServerShowHint("", 0);
+            UnturnedPlayer uplayer = UnturnedPlayer.FromPlayer(player);
+            _playersInLinkingMode.Remove(uplayer);
+            _lookingAt.Remove(uplayer.CSteamID);
+            _selectedNode.Remove(player.channel.owner.playerID.steamID);
+            ClearNodeView(player.channel.owner.playerID.steamID);
+            ClearPreviewView(player.channel.owner.playerID.steamID);
+            ClearSelectedView(player.channel.owner.playerID.steamID);
+            return;
+        }
     }
 
     private void OnDequipRequested(Player player, ItemAsset asset, ref bool shouldAllow)
@@ -175,6 +213,7 @@ public class PlayerViewService : MonoBehaviour
             _selectedNode.Remove(player.channel.owner.playerID.steamID);
             ClearNodeView(player.channel.owner.playerID.steamID);
             ClearPreviewView(player.channel.owner.playerID.steamID);
+            ClearSelectedView(player.channel.owner.playerID.steamID);
         }
     }
 
@@ -184,6 +223,7 @@ public class PlayerViewService : MonoBehaviour
         _playersInLinkingMode.Remove(player);
         _lookingAt.Remove(player.CSteamID);
         ClearPreviewView(player.CSteamID);
+        ClearSelectedView(player.CSteamID);
     }
 
     private void OnNodeSelected(UnturnedPlayer player, Transform nodeTransform)
@@ -212,7 +252,7 @@ public class PlayerViewService : MonoBehaviour
             if (!_playersWithGogglesOn.Contains(player) && !holdingWiringTool)
                 continue;
 
-            Raycast ray = new Raycast(player.Player, 16);
+            Raycast ray = new(player.Player, 16);
             BarricadeDrop drop = ray.GetBarricade(out _, out float distance, out LogicGateSubnode lgs);
             
             if (drop == null)
@@ -220,6 +260,15 @@ public class PlayerViewService : MonoBehaviour
                 _lookingAt[player.CSteamID] = 0;
                 ClearPreviewView(player.CSteamID);
                 ClearGogglesView(player.CSteamID);
+                ClearSelectedView(player.CSteamID);
+                continue;
+            }
+            if (!DoesOwnDrop(drop, player.CSteamID))
+            {
+                _lookingAt[player.CSteamID] = 0;
+                ClearPreviewView(player.CSteamID);
+                ClearGogglesView(player.CSteamID);
+                ClearSelectedView(player.CSteamID);
                 continue;
             }
             if(distance > 4)
@@ -235,18 +284,20 @@ public class PlayerViewService : MonoBehaviour
             {
                 _lookingAt[player.CSteamID] = lookingatID;
                 ClearPreviewView(player.CSteamID);
+                ClearSelectedView(player.CSteamID);
                 ClearGogglesView(player.CSteamID);
                 continue;
             }
-            if(lgs == null)
+            if(lgs == null && holdingWiringTool)
             {
+                ClearSelectedView(player.CSteamID);
                 switch (node)
                 {
                     case GateNode:
                         sendEffectCool(player, drop.model.position, _resources.node_gate_selected);
                         break;
                     case TimerNode:
-                        sendEffectCool(player, drop.model.position, _resources.node_timer_selected);
+                        sendEffectCool(player, drop.model.position, _resources.node_gate_selected);
                         break;
                     case LogicGateSubnode:
                         sendEffectCool(player, drop.model.position, _resources.node_subnode_selected);
@@ -261,8 +312,9 @@ public class PlayerViewService : MonoBehaviour
                         break;
                 }
             }
-            else
+            else if (holdingWiringTool)
             {
+                ClearSelectedView(player.CSteamID);
                 sendEffectCool(player, lgs.transform.position, _resources.node_subnode_selected);
             }
             
@@ -308,7 +360,7 @@ public class PlayerViewService : MonoBehaviour
                 else if (node1type is GateNode || node2type is GateNode)
                     effect = _resources.preview_gate;
                 else if (node1type is TimerNode || node2type is TimerNode)
-                    effect = _resources.preview_timer;
+                    effect = _resources.preview_gate;
                 else if (node1type is LogicGateSubnode || node2type is LogicGateSubnode)
                     effect = _resources.preview_subnode;
                 else
@@ -320,7 +372,7 @@ public class PlayerViewService : MonoBehaviour
                         sendEffectCool(player, drop.model.position, _resources.node_gate_selected);
                         break;
                     case TimerNode:
-                        sendEffectCool(player, drop.model.position, _resources.node_timer_selected);
+                        sendEffectCool(player, drop.model.position, _resources.node_gate_selected);
                         break;
                     case LogicGateSubnode:
                         sendEffectCool(player, drop.model.position, _resources.node_subnode_selected);
@@ -348,7 +400,7 @@ public class PlayerViewService : MonoBehaviour
         UnturnedPlayer player = UnturnedPlayer.FromCSteamID(steamid);
         if (player == null) return;
 
-        HashSet<IElectricNode> visibleNodes = new HashSet<IElectricNode>();
+        HashSet<IElectricNode> visibleNodes = [];
 
         var bfinder = new BarricadeFinder(player.Position);
         foreach (BarricadeDrop drop in bfinder.GetBarricadesInRadius(100f))
@@ -378,8 +430,9 @@ public class PlayerViewService : MonoBehaviour
                         sendEffectCool(player, lg.Input1Position, _resources.node_subnode);
                 }
             }
+
             else if (node is TimerNode)
-                sendEffectCool(player, t.position, _resources.node_timer);
+                sendEffectCool(player, t.position, _resources.node_gate);
         }
 
         foreach (var connection in _ncs.GetAllConnections())
@@ -388,6 +441,8 @@ public class PlayerViewService : MonoBehaviour
             bool isNode2Visible = visibleNodes.Contains(connection.Node2);
 
             if (!isNode1Visible && !isNode2Visible)
+                continue;
+            if (!DoesOwnDrop(connection.Node1.barricade, player.CSteamID) || !DoesOwnDrop(connection.Node2.barricade, player.CSteamID))
                 continue;
 
             EffectAsset pathEffect;
@@ -402,7 +457,7 @@ public class PlayerViewService : MonoBehaviour
             }
             else if (connection.Node1 is TimerNode || connection.Node2 is TimerNode)
             {
-                pathEffect = _resources.path_timer;
+                pathEffect = _resources.path_gate;
             }
             else if (connection.Node1 is LogicGateSubnode || connection.Node2 is LogicGateSubnode)
             {
@@ -435,7 +490,7 @@ public class PlayerViewService : MonoBehaviour
                     sendEffectCool(player, selectedNode.position, _resources.node_power_selected);
                     break;
                 case TimerNode:
-                    sendEffectCool(player, selectedNode.position, _resources.node_timer_selected);
+                    sendEffectCool(player, selectedNode.position, _resources.node_gate_selected);
                     break;
                 case LogicGateSubnode:
                     sendEffectCool(player, selectedNode.position, _resources.node_subnode_selected);
@@ -487,7 +542,7 @@ public class PlayerViewService : MonoBehaviour
 
             Vector3 direction = (con.Node2.WireConnectPoint.position - con.Node1.WireConnectPoint.position).normalized;
 
-            TriggerEffectParameters effect = new TriggerEffectParameters
+            TriggerEffectParameters effect = new()
             {
                 asset = wire,
                 position = con.Node1.WireConnectPoint.position,
@@ -519,7 +574,7 @@ public class PlayerViewService : MonoBehaviour
 
 
                     EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Name_Supplier", $"{drop.asset.FriendlyName}");
-                    EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Stat_Supplier_Supply", $"{sup.Supply}pu");
+                    EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Stat_Supplier_Supply", $"{Math.Round(sup.Supply, 1)}pu");
                     EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Stat_Supplier_Powered", sup.IsPowered ? "Yes" : "No");
                     EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Supplier", true);
                 }
@@ -560,6 +615,11 @@ public class PlayerViewService : MonoBehaviour
         foreach (Guid guid in _resources.previeweffects)
             EffectManager.ClearEffectByGuid(guid, Provider.findTransportConnection(steamid));
     }
+    private void ClearSelectedView(CSteamID steamid)
+    {
+        foreach (Guid guid in _resources.selectedeffects)
+            EffectManager.ClearEffectByGuid(guid, Provider.findTransportConnection(steamid));
+    }
     private void ClearGogglesView(CSteamID steamid)
     {
         EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), false, "Box_Supplier", false);
@@ -572,7 +632,7 @@ public class PlayerViewService : MonoBehaviour
 
         Vector3 direction = (point2 - point1).normalized;
 
-        TriggerEffectParameters effect = new TriggerEffectParameters
+        TriggerEffectParameters effect = new()
         {
             asset = pathEffect,
             position = point1,
@@ -588,7 +648,7 @@ public class PlayerViewService : MonoBehaviour
 
     private void sendEffectCool(UnturnedPlayer player, Vector3 dropPosition, EffectAsset asset)
     {
-        TriggerEffectParameters effect = new TriggerEffectParameters
+        TriggerEffectParameters effect = new()
         {
             asset = asset,
             position = dropPosition,

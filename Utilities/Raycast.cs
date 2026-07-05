@@ -5,16 +5,11 @@ using Wired.Utilities;
 
 namespace Wired
 {
-    public class Raycast
+    public class Raycast(Player player, uint range = 8)
     {
-        private Player player;
-        private uint Range;
+        private readonly Player player = player;
+        private readonly uint Range = range;
 
-        public Raycast(Player player, uint range = 8)
-        {
-            this.player = player;
-            Range = range;
-        }
         public BarricadeDrop GetBarricade(out string colliderName, out float hitDistance, out LogicGateSubnode lgs)
         {
             colliderName = "";

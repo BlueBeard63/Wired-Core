@@ -64,7 +64,7 @@ namespace Wired
             ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => true;
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
 
-            Harmony harmony = new Harmony("com.mew.powerShenanigans");
+            Harmony harmony = new("com.mew.powerShenanigans");
             harmony.PatchAll();
             foreach (MethodBase method in harmony.GetPatchedMethods())
             {
@@ -83,12 +83,13 @@ namespace Wired
 
             Services.WiredDeltaService.Disconnect(new ConsolePlayer());
 
-            Harmony harmony = new Harmony("com.mew.powerShenanigans");
+            Harmony harmony = new("com.mew.powerShenanigans");
             harmony.UnpatchAll("com.mew.powerShenanigans");
 
             U.Events.OnPlayerConnected -= OnPlayerConnected;
             U.Events.OnPlayerDisconnected -= OnPlayerDisconnected;
             Level.onLevelLoaded -= OnLevelLoaded;
+            BarricadeManager.onModifySignRequested -= OnModifySignRequested;
 
             Instance = null;
         }
@@ -100,7 +101,6 @@ namespace Wired
                 Instance.UnloadPlugin();
                 return;
             }
-
             WiredLogger.LogPluginLoaded(true);
             Resources = new Resources();
             Services = new ServiceContainer(Resources);
@@ -154,7 +154,7 @@ namespace Wired
             {
                 rr.TrySetFrequency(text, PlayerTool.getPlayer(instigator));
             }
-            else if (sign.gameObject.TryGetComponent(out TimerNode timer))
+            else if (sign.gameObject.TryGetComponent(out TimerNode _))
             {
                 shouldAllow = false;
             }

@@ -11,6 +11,7 @@ namespace Wired.Models
         bool IsPowered { get; }
         float Consumption { get; }
         bool AllowPowerThrough { get; }
+        BarricadeDrop barricade { get; }
         Transform WireConnectPoint { get; }
         void SetPowered(bool powered);
         void Uninitialize();

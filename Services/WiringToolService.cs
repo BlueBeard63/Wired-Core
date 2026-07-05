@@ -11,9 +11,10 @@ namespace Wired.Services
 {
     public class WiringToolService
     {
-        private WiredAssetsService _assets;
-        public readonly Dictionary<CSteamID, Transform> SelectedNode = new Dictionary<CSteamID, Transform>();
-        private readonly Dictionary<CSteamID, List<Vector3>> _selectedPath = new Dictionary<CSteamID, List<Vector3>>();
+        private readonly WiredAssetsService _assets;
+        private readonly NodeConnectionsService _ncs;
+        public readonly Dictionary<CSteamID, Transform> SelectedNode = [];
+        private readonly Dictionary<CSteamID, List<Vector3>> _selectedPath = [];
 
         public delegate void NodeSelectedHandler(UnturnedPlayer player, Transform nodeTransform);
         public static event NodeSelectedHandler OnNodeSelected;
@@ -23,9 +24,10 @@ namespace Wired.Services
 
         public delegate void NodeConnectionRequestedHandler(UnturnedPlayer player, IElectricNode node1, IElectricNode node2, List<Vector3> wirepath);
         public static event NodeConnectionRequestedHandler OnNodeLinkRequested;
-        public WiringToolService(WiredAssetsService assets)
+        public WiringToolService(WiredAssetsService assets, NodeConnectionsService ncs)
         {
             _assets = assets;
+            _ncs = ncs;
             UseableGun.onBulletSpawned += OnBulletSpawned;
             OnNodeSelectionClearRequested += ClearSelection;
             UseableGun.OnAimingChanged_Global += OnAimingChanged_Global;
@@ -36,7 +38,7 @@ namespace Wired.Services
         {
             if (!_assets.WiredAssets.ContainsKey(gun.equippedGunAsset.GUID))
                 return;
-            if (!(_assets.WiredAssets[gun.equippedGunAsset.GUID] is WiringToolAsset))
+            if (_assets.WiredAssets[gun.equippedGunAsset.GUID] is not WiringToolAsset)
                 return;
             shouldAllow = false;
         }
@@ -44,7 +46,7 @@ namespace Wired.Services
         {
             if (!_assets.WiredAssets.ContainsKey(gun.equippedGunAsset.GUID))
                 return;
-            if (!(_assets.WiredAssets[gun.equippedGunAsset.GUID] is WiringToolAsset))
+            if (_assets.WiredAssets[gun.equippedGunAsset.GUID] is not WiringToolAsset)
                 return;
 
             if (!gun.isAiming) return;
@@ -58,13 +60,13 @@ namespace Wired.Services
         {
             if (!_assets.WiredAssets.ContainsKey(gun.equippedGunAsset.GUID))
                 return;
-            if (!(_assets.WiredAssets[gun.equippedGunAsset.GUID] is WiringToolAsset))
+            if (_assets.WiredAssets[gun.equippedGunAsset.GUID] is not WiringToolAsset)
                 return;
 
             UnturnedPlayer player = UnturnedPlayer.FromCSteamID(gun.player.channel.owner.playerID.steamID);
-            Raycast raycast = new Raycast(gun.player, 16);
+            Raycast raycast = new(gun.player, 16);
 
-            var drop = raycast.GetBarricade(out _, out float distance, out LogicGateSubnode lgs);
+            var drop = raycast.GetBarricade(out _, out _, out LogicGateSubnode lgs);
             if(drop != null)
             {
                 TrySelectNode(player, raycast, drop, lgs);
@@ -142,11 +144,42 @@ namespace Wired.Services
                 return;
             }
 
+            if (electricnode1 is LogicGateSubnode n)
+            {
+                if (n.IsBusy)
+                {
+                    if(!_ncs.IsConnected(electricnode1, electricnode2))
+                    {
+                        OnNodeSelectionClearRequested?.Invoke(player);
+                        player.Player.ServerShowHint($"You can't connect multiple nodes to a logic gate input!", 3f);
+                        return;
+                    }
+                }
+            }
+            if (electricnode2 is LogicGateSubnode n2)
+            {
+                if (n2.IsBusy)
+                {
+                    if (!_ncs.IsConnected(electricnode1, electricnode2))
+                    {
+                        OnNodeSelectionClearRequested?.Invoke(player);
+                        player.Player.ServerShowHint($"You can't connect multiple nodes to a logic gate input!", 3f);
+                        return;
+                    }
+                }
+            }
+            if (electricnode1 is LogicGateSubnode && electricnode2 is LogicGateSubnode)
+            {
+                OnNodeSelectionClearRequested?.Invoke(player);
+                player.Player.ServerShowHint($"You can't connect logic gate inputs together!", 3f);
+                return;
+            }
+
             List<Vector3> path;
             if (_selectedPath.ContainsKey(player.CSteamID))
                 path = _selectedPath[player.CSteamID];
             else
-                path = new List<Vector3>();
+                path = [];
 
             OnNodeLinkRequested?.Invoke(player, electricnode1, electricnode2, path);
             OnNodeSelectionClearRequested?.Invoke(player);

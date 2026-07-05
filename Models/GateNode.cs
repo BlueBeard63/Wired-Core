@@ -18,6 +18,7 @@ namespace Wired.Models
         public bool AllowPowerThrough { get; set; }
         public bool SwitchableByPlayer { get; set; } = false;
         public Transform WireConnectPoint { get; set; }
+        public BarricadeDrop barricade { get; set; }
 
         private InteractableSpot _spot;
         /// <summary>
@@ -45,7 +46,7 @@ namespace Wired.Models
         private void Awake()
         {
             _spot = GetComponent<InteractableSpot>();
-            AllowPowerThrough = _spot == null ? false : _spot.isPowered;
+            AllowPowerThrough = _spot != null && _spot.isPowered;
             InstanceID = BarricadeManager.FindBarricadeByRootTransform(this.transform).instanceID;
 
             var p = transform.Find("WireConnectPoint");

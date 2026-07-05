@@ -26,8 +26,8 @@ namespace Wired.Services
         {
             Instance = this;
 
-            _nodeToNetwork = new Dictionary<IElectricNode, ElectricNetwork>();
-            Networks = new HashSet<ElectricNetwork>();
+            _nodeToNetwork = [];
+            Networks = [];
 
             WiringToolService.OnNodeLinkRequested += OnNodeLinkRequested;
             Plugin.OnSwitchToggled += OnSwitchToggled;
@@ -132,13 +132,15 @@ namespace Wired.Services
         }
         public List<KeyValuePair<uint, IElectricNode>> GetAllNodes()
         {
-            List<KeyValuePair<uint, IElectricNode>> result = new();
+            List<KeyValuePair<uint, IElectricNode>> result = [];
             foreach(var key in _nodeToNetwork.Keys)
             {
                 result.Add(new KeyValuePair<uint, IElectricNode>(key.InstanceID, key));
             }
             return result;
         }
+        public bool IsConnected(IElectricNode node1, IElectricNode node2) 
+            => GetAllConnections().Any(nc => (nc.Node1 == node1 && nc.Node2 == node2) || (nc.Node1 == node2 && nc.Node2 == node1));
 
         private void OnNodeLinkRequested(UnturnedPlayer player, IElectricNode node1, IElectricNode node2, List<Vector3> wirepath)
         {
@@ -160,7 +162,7 @@ namespace Wired.Services
         }
         private void ConnectNodes(UnturnedPlayer player, IElectricNode node1, IElectricNode node2, List<Vector3> wirePath)
         {
-            NodeConnection connection = new NodeConnection(wirePath ?? new List<Vector3>(), node1, node2);
+            NodeConnection connection = new(wirePath ?? [], node1, node2);
 
             _nodeToNetwork.TryGetValue(node1, out ElectricNetwork net1);
             _nodeToNetwork.TryGetValue(node2, out ElectricNetwork net2);
@@ -186,6 +188,11 @@ namespace Wired.Services
             {
                 MergeNetworks(net1, net2, connection);
             }
+            if(node1 is LogicGateSubnode lgs)
+                lgs.IsBusy = true;
+            if(node2 is LogicGateSubnode lgs2)
+                lgs2.IsBusy = true;
+
             if(player != null)
             {
                 OnNodeConnected?.Invoke(player, connection);
@@ -201,6 +208,11 @@ namespace Wired.Services
                     network.Connections.Remove(connection);
 
                     RebuildNetworkTopology(network);
+
+                    if(connection.Node1 is LogicGateSubnode lgs)
+                        lgs.IsBusy = false;
+                    if(connection.Node2 is LogicGateSubnode lgs2)
+                        lgs2.IsBusy = false;
 
                     OnNodeDisconnected?.Invoke(player, connection);
                 }
@@ -220,7 +232,7 @@ namespace Wired.Services
 
         private void CreateNewNetwork(NodeConnection initialConnection)
         {
-            ElectricNetwork net = new ElectricNetwork();
+            ElectricNetwork net = new();
             Networks.Add(net);
 
             RegisterNode(net, initialConnection.Node1);
@@ -267,7 +279,7 @@ namespace Wired.Services
             Networks.Remove(oldNetwork);
             foreach (var node in allNodes) _nodeToNetwork.Remove(node);
 
-            HashSet<IElectricNode> visited = new HashSet<IElectricNode>();
+            HashSet<IElectricNode> visited = [];
 
             foreach (var node in allNodes)
             {
@@ -275,16 +287,16 @@ namespace Wired.Services
 
                 bool isOrphan = !allConnections.Any(c => c.Node1 == node || c.Node2 == node);
 
-                if (isOrphan && !(node is SupplierNode))
+                if (isOrphan && node is not SupplierNode)
                 {
                     if (node.IsPowered) node.SetPowered(false);
                     continue;
                 }
 
-                ElectricNetwork newNet = new ElectricNetwork();
+                ElectricNetwork newNet = new();
                 Networks.Add(newNet);
 
-                Queue<IElectricNode> q = new Queue<IElectricNode>();
+                Queue<IElectricNode> q = new();
                 q.Enqueue(node);
                 visited.Add(node);
                 RegisterNode(newNet, node);

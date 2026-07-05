@@ -10,6 +10,7 @@ namespace Wired.Utilities
     {
         public static void Info(string message)
         {
+            if (!Plugin.Instance.Configuration.Instance.LogDebugMessages) return;
             Console.WriteLine($"[Wired]: {message}");
         }
         public static void Warn(string message)
@@ -35,7 +36,8 @@ namespace Wired.Utilities
                 Console.WriteLine(" __      ___ _ __ ___  __| |");
                 Console.WriteLine(" \\ \\ /\\ / / | '__/ _ \\/ _` |        Wired has loaded succesfully!");
                 Console.WriteLine("  \\ V  V /| | | |  __/ (_| |");
-                Console.WriteLine("   \\_/\\_/ |_|_|  \\___|\\__,_|\n");
+                Console.WriteLine("   \\_/\\_/ |_|_|  \\___|\\__,_|");
+                Console.WriteLine("");
                 Console.ResetColor();
                 return;
             }

@@ -132,18 +132,16 @@ namespace Wired.Services
             }
             byte[] imageBytes = File.ReadAllBytes(mapPath);
 
-            using (var client = new HttpClient())
-            using (var content = new MultipartFormDataContent())
-            {
-                var imageContent = new ByteArrayContent(imageBytes);
+            using var client = new HttpClient();
+            using var content = new MultipartFormDataContent();
+            var imageContent = new ByteArrayContent(imageBytes);
 
-                imageContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
+            imageContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
 
-                content.Add(imageContent, "file", $"map.png");
-                content.Add(new StringContent(_sessionId), "sessionId");
+            content.Add(imageContent, "file", $"map.png");
+            content.Add(new StringContent(_sessionId), "sessionId");
 
-                await client.PostAsync("https://localhost:7105/api/map/upload", content);
-            }
+            await client.PostAsync("https://localhost:7105/api/map/upload", content);
         }
         public async void Disconnect(IRocketPlayer caller)
         {
