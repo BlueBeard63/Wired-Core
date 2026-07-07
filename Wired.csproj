@@ -12,7 +12,7 @@
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <LangVersion>latest</LangVersion>
     <FileAlignment>512</FileAlignment>
-    <Deterministic>true</Deterministic>
+    <Deterministic>false</Deterministic>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -128,6 +128,7 @@
     <Compile Include="WiredAssets\Placeables\BatteryChargerAsset.cs" />
     <Compile Include="WiredAssets\Items\EngineerGogglesAsset.cs" />
     <Compile Include="WiredAssets\Items\ManualTabletAsset.cs" />
+    <Compile Include="WiredAssets\Placeables\ButtonAsset.cs" />
     <Compile Include="WiredAssets\Placeables\LogicGateAsset.cs" />
     <Compile Include="WiredAssets\Placeables\SolarPanelAsset.cs" />
     <Compile Include="WiredAssets\Placeables\NetworkDataDisplayAsset.cs" />
@@ -151,7 +152,6 @@
     <Compile Include="Utilities\AssetParser.cs" />
     <Compile Include="Utilities\BarricadeFinder.cs" />
     <Compile Include="Config.cs" />
-    <Compile Include="Services\PlayerEventsService.cs" />
     <Compile Include="Utilities\MetadataEditor.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -166,6 +166,7 @@
     <Compile Include="WiredAssets\Placeables\RemoteReceiverAsset.cs" />
     <Compile Include="WiredAssets\Placeables\RemoteTransmitterAsset.cs" />
     <Compile Include="WiredInteractables\BatteryCharger.cs" />
+    <Compile Include="WiredInteractables\Button.cs" />
     <Compile Include="WiredInteractables\IWiredInteractable.cs" />
     <Compile Include="WiredInteractables\Keypad.cs" />
     <Compile Include="WiredInteractables\LogicGate.cs" />

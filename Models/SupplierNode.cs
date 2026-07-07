@@ -13,7 +13,7 @@ namespace Wired.Models
     public class SupplierNode : MonoBehaviour, IElectricNode
     {
         public uint InstanceID { get; private set; }
-        public bool IsPowered { get; private set; } = true;
+        public bool IsPowered { get; private set; }
         public IWiredAsset Asset { get; set; }
         public float Consumption { get; } = 0;
         public bool AllowPowerThrough { get; } = true;

@@ -27,22 +27,7 @@ namespace Wired.Wrappers
                 return;
             }
             if (_spot != null)
-            {
                 BarricadeManager.ServerSetSpotPowered(_spot, powered);
-
-                BarricadeFinder finder = new(position: _spot.transform.position);
-                if (finder.GetBarricadesInRadius(radius: 256).Any(b => b.asset.GUID == new Guid("101d13181ef1407ca583686f36663a0f")))
-                {
-                    Barricade bar = new(Plugin.Instance.Resources.generator_technical);
-                    Transform gen = BarricadeManager.dropNonPlantedBarricade(bar, _spot.transform.position, _spot.transform.rotation, 0, 0);
-                    if (gen != null)
-                    {
-                        BarricadeManager.sendFuel(gen, 512);
-                        BarricadeManager.ServerSetGeneratorPowered(gen.GetComponent<InteractableGenerator>(), true);
-                    }
-                }
-                return;
-            }
             if (_oven != null)
                 BarricadeManager.ServerSetOvenLit(_oven, powered);
             if (_oxygenator != null)

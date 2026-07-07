@@ -21,6 +21,7 @@ namespace Wired
     public class Plugin : RocketPlugin<Config>
     {
         public static Plugin Instance;
+        private Harmony _harmony;
 
         private bool _levelLoaded;
 
@@ -29,8 +30,8 @@ namespace Wired
         public ServiceContainer Services;
 
         public delegate void SwitchToggled(GateNode sw, bool state);
-        public static event SwitchToggled OnSwitchToggled;
-        public void SendSwitchToggled(GateNode sw, bool state) => OnSwitchToggled?.Invoke(sw, state);
+        public static event SwitchToggled OnGateToggled;
+        public void SendGateToggled(GateNode sw, bool state) => OnGateToggled?.Invoke(sw, state);
 
         public delegate void TimerExpired(TimerNode timer);
         public static event TimerExpired OnTimerExpired;
@@ -61,20 +62,28 @@ namespace Wired
         {
             Instance = this;
 
-            ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => true;
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
-
-            Harmony harmony = new("com.mew.powerShenanigans");
-            harmony.PatchAll();
-            foreach (MethodBase method in harmony.GetPatchedMethods())
+            if(_harmony == null)
             {
-                WiredLogger.Info("Patched method: " + method.DeclaringType.FullName + "." + method.Name);
+                _harmony = new("com.mew.wired");
+                _harmony.PatchAll();
+                foreach (MethodBase method in _harmony.GetPatchedMethods())
+                {
+                    WiredLogger.Info("Patched method: " + method.DeclaringType.FullName + "." + method.Name);
+                }
             }
+
+            Provider.onCommenceShutdown += onCommenceShutdown;
 
             U.Events.OnPlayerConnected += OnPlayerConnected;
             U.Events.OnPlayerDisconnected += OnPlayerDisconnected;
             Level.onLevelLoaded += OnLevelLoaded;
             BarricadeManager.onModifySignRequested += OnModifySignRequested;
+        }
+
+        private void onCommenceShutdown()
+        {
+            _harmony.UnpatchAll("com.mew.wired");
+            _harmony = null;
         }
 
         protected override void Unload()
@@ -83,8 +92,7 @@ namespace Wired
 
             Services.WiredDeltaService.Disconnect(new ConsolePlayer());
 
-            Harmony harmony = new("com.mew.powerShenanigans");
-            harmony.UnpatchAll("com.mew.powerShenanigans");
+            Provider.onCommenceShutdown += onCommenceShutdown;
 
             U.Events.OnPlayerConnected -= OnPlayerConnected;
             U.Events.OnPlayerDisconnected -= OnPlayerDisconnected;
@@ -101,6 +109,10 @@ namespace Wired
                 Instance.UnloadPlugin();
                 return;
             }
+
+            ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => true;
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
+
             WiredLogger.LogPluginLoaded(true);
             Resources = new Resources();
             Services = new ServiceContainer(Resources);
@@ -133,13 +145,10 @@ namespace Wired
 
         private void OnPlayerDisconnected(UnturnedPlayer player)
         {
-            player.Player.gameObject.TryRemoveComponent<PlayerEvents>();
         }
 
         private void OnPlayerConnected(UnturnedPlayer player)
         {
-            player.Player.gameObject.AddComponent<PlayerEvents>();
-
             ITransportConnection connection = player.Player.channel.owner.transportConnection;
             EffectManager.SendUIEffect(Resources.goggles_ui, Resources.GogglesUIKey, connection, true);
         }
@@ -173,13 +182,23 @@ namespace Wired
 
                 if (__instance.gameObject.TryGetComponent(out GateNode sw))
                 {
-                    if (!sw.SwitchableByPlayer)
+                    if (sw.SwitchableByPlayer)
+                    {
+                        if (__instance.gameObject.TryGetComponent(out Button bt))
+                        {
+                            if (bt.IsOn) return false;
+                            bt.SetPowered(true);
+                            sw.Switch(true);
+                            return true;
+                        }
+                    }
+                    else
                     {
                         if (__instance.gameObject.TryGetComponent(out Keypad kp))
                         {
                             OnKeypadInteractRequested?.Invoke(kp, player);
                             return false;
-                        }
+                        }   
                         return false;
                     }
                     sw.Switch(desiredPowered);

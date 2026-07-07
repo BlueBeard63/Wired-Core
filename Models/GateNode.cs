@@ -35,7 +35,9 @@ namespace Wired.Models
             if(_spot != null)
                 BarricadeManager.ServerSetSpotPowered(_spot, state);
 
-            Plugin.Instance.SendSwitchToggled(this, state);
+            Plugin.Instance.SendGateToggled(this, state);
+
+
         }
         public void Uninitialize()
         {

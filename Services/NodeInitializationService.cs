@@ -10,6 +10,7 @@ using Wired.Models;
 using Wired.Utilities;
 using Wired.WiredAssets;
 using Wired.WiredInteractables;
+using static SDG.Unturned.GunAttachmentEventHook;
 
 namespace Wired.Services
 {
@@ -76,6 +77,18 @@ namespace Wired.Services
                     createdNode = sw;
                     break;
 
+                case ButtonAsset buttonAsset:
+                    var ba = barricade.model.gameObject.AddComponent<GateNode>();
+                    ba.barricade = barricade;
+                    ba.Asset = buttonAsset;
+                    ba.SetPowered(false);
+                    ba.Switch(false);
+                    ba.SwitchableByPlayer = true;
+                    var button = barricade.model.gameObject.AddComponent<Button>();
+                    button.StaysPressedSeconds = buttonAsset.StaysPressedSecons;
+                    createdNode = ba;
+                    break;
+
                 case LogicGateAsset logicGate:
                     var gn = barricade.model.gameObject.AddComponent<GateNode>();
                     gn.barricade = barricade;
@@ -84,6 +97,7 @@ namespace Wired.Services
                     gn.SwitchableByPlayer = false;
                     var lg = gn.gameObject.AddComponent<LogicGate>();
                     lg.Type = logicGate.Type;
+                    createdNode = gn;
                     break;
                 
                 case ConnectorAsset connectorAsset:
@@ -186,6 +200,7 @@ namespace Wired.Services
                     ndaa.Asset = networkDataDisplayAsset;
                     ndaa.SetPowered(false);
                     ndaa.Consumption = networkDataDisplayAsset.Consumption;
+                    createdNode = ndaa;
                     break;
 
                 case BatteryChargerAsset batteryChargerAsset:
@@ -195,7 +210,18 @@ namespace Wired.Services
                     bca.Asset = batteryChargerAsset;
                     bca.SetPowered(false);
                     bca.Consumption = bca.Consumption;
+                    createdNode = bca;
                     break;
+            }
+            BarricadeFinder finder = new(position: barricade.model.position);
+            if (!finder.GetBarricadesInRadius(radius: 128).Any(b => b.asset != null && b.asset.GUID == Plugin.Instance.Resources.generator_technical.GUID))
+            {
+                Barricade bar = new(Plugin.Instance.Resources.generator_technical);
+                Transform gen = BarricadeManager.dropNonPlantedBarricade(bar, barricade.model.transform.position, barricade.model.transform.rotation, 0, 0);
+                var gen2 = gen.GetComponent<InteractableGenerator>();
+                gen2.askFill(1024);
+                BarricadeManager.sendFuel(gen, gen2.fuel);
+                BarricadeManager.ServerSetGeneratorPowered(gen.GetComponent<InteractableGenerator>(), true);
             }
 
             if (createdNode != null)

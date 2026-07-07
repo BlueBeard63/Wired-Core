@@ -1,5 +1,6 @@
 ﻿using Rocket.API;
 using Rocket.Unturned.Chat;
+using SDG.Unturned;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -16,9 +17,9 @@ namespace Wired.Commands
 
         public string Syntax => "";
 
-        public List<string> Aliases => new List<string>();
+        public List<string> Aliases => [];
 
-        public List<string> Permissions => new List<string>();
+        public List<string> Permissions => ["wired"];
 
         public void Execute(IRocketPlayer caller, string[] command)
         {

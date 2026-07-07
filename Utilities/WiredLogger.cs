@@ -1,6 +1,8 @@
-﻿using System;
+﻿using Rocket.Core.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -11,49 +13,43 @@ namespace Wired.Utilities
         public static void Info(string message)
         {
             if (!Plugin.Instance.Configuration.Instance.LogDebugMessages) return;
-            Console.WriteLine($"[Wired]: {message}");
+            Logger.Log($"[Wired]: {message}");
         }
         public static void Warn(string message)
         {
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine($"[Wired] WARN: {message}");
-            Console.ResetColor();
+            Logger.LogWarning($"[Wired] WARN: {message}");
         }
         public static void Error(string message)
         {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"[Wired] ERROR: {message}");
-            Console.ResetColor();
+            Logger.LogError($"[Wired] ERROR: {message}");
         }
 
         public static void LogPluginLoaded(bool success)
         {
             if (success)
             {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("           _              _ ");
-                Console.WriteLine("          (_)            | |");
-                Console.WriteLine(" __      ___ _ __ ___  __| |");
-                Console.WriteLine(" \\ \\ /\\ / / | '__/ _ \\/ _` |        Wired has loaded succesfully!");
-                Console.WriteLine("  \\ V  V /| | | |  __/ (_| |");
-                Console.WriteLine("   \\_/\\_/ |_|_|  \\___|\\__,_|");
-                Console.WriteLine("");
-                Console.ResetColor();
+                Console.WriteLine("           _              _ ", ConsoleColor.Yellow);
+                Console.WriteLine("          (_)            | |", ConsoleColor.Yellow);
+                Console.WriteLine(" __      ___ _ __ ___  __| |", ConsoleColor.Yellow);
+                Console.WriteLine($" \\ \\ /\\ / / | '__/ _ \\/ _` |        Wired has loaded succesfully!", ConsoleColor.Yellow);
+                Console.WriteLine("  \\ V  V /| | | |  __/ (_| |", ConsoleColor.Yellow);
+                Console.WriteLine("   \\_/\\_/ |_|_|  \\___|\\__,_|", ConsoleColor.Yellow);
+                Console.WriteLine(" ");
+                Console.WriteLine($"Wired Version: {Assembly.GetAssembly(typeof(Plugin)).GetName().Version}");
+                Console.WriteLine(" ");
                 return;
             }
 
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("##########################################################");
-            Console.WriteLine("##########################################################");
+            Console.WriteLine("##########################################################", ConsoleColor.Red);
+            Console.WriteLine("##########################################################", ConsoleColor.Red);
             Console.WriteLine("");
-            Console.WriteLine("                 WIRED IS NOT INSTALLED");
-            Console.WriteLine("    Add 3583223837 to your WorkshopDownloadConfig.json");
+            Console.WriteLine("                 WIRED IS NOT INSTALLED", ConsoleColor.Red);
+            Console.WriteLine("    Add 3583223837 to your WorkshopDownloadConfig.json", ConsoleColor.Red);
             Console.WriteLine("");
-            Console.WriteLine(" For more information visit Wired™ page on Steam Workshop");
+            Console.WriteLine(" For more information visit Wired™ page on Steam Workshop", ConsoleColor.Red);
             Console.WriteLine("");
-            Console.WriteLine("##########################################################");
-            Console.WriteLine("##########################################################");
-            Console.ResetColor();
+            Console.WriteLine("##########################################################", ConsoleColor.Red);
+            Console.WriteLine("##########################################################", ConsoleColor.Red);
         }
     }
 }

@@ -25,7 +25,6 @@ public class LogicGate : MonoBehaviour, IWiredInteractable
 
     public void SetPowered(bool state)
     {
-        bool prevstate = _gateNode.AllowPowerThrough;
         switch (Type)
         {
             case LogicGateType.AND:
@@ -51,10 +50,6 @@ public class LogicGate : MonoBehaviour, IWiredInteractable
                 break;
             default:
                 break;
-        }
-        if(_gateNode.AllowPowerThrough != prevstate)
-        {
-            _gateNode.Switch(_gateNode.AllowPowerThrough);
         }
     }
     private void Awake()

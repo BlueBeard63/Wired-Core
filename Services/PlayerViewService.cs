@@ -15,6 +15,7 @@ using Rocket.Unturned;
 using Wired.WiredInteractables;
 using Rocket.Core.Assets;
 using Newtonsoft.Json.Linq;
+using System.Collections;
 
 namespace Wired.Services;
 
@@ -33,10 +34,11 @@ public class PlayerViewService : MonoBehaviour
         WiringToolService.OnNodeSelectionClearRequested += OnNodeSelectionCleared;
         NodeConnectionsService.OnNodeConnected += OnNodeConnected;
         NodeConnectionsService.OnNodeDisconnected += OnNodeDisconnected;
-        PlayerEvents.OnDequipRequested += OnDequipRequested;
-        PlayerEvents.OnEquipRequested += OnEquipRequested;
         PlayerEquipment.OnUseableChanged_Global += PlayerEquipment_OnUseableChanged_Global;
         PlayerClothing.OnGlassesChanged_Global += OnGlassesChanged_Global;
+        PlayerEquipment.OnUseableChanged_Global += OnUseableChanged_Global;
+        BarricadeManager.onTransformRequested += OnBarricadeMoveRequested;
+
 
         U.Events.OnPlayerConnected += OnPlayerConnected;
         
@@ -44,6 +46,62 @@ public class PlayerViewService : MonoBehaviour
         _resources = resources;
         _ncs = ncs;
         _selectedNode = selectedNode;
+    }
+
+    private void OnBarricadeMoveRequested(CSteamID instigator, byte x, byte y, ushort plant, uint instanceID, ref Vector3 point, ref byte angle_x, ref byte angle_y, ref byte angle_z, ref bool shouldAllow)
+    {
+        Console.WriteLine($"Barricade move requetsed to {point}");
+        StartCoroutine(BarricadeMovedCoroutine());
+    }
+    private IEnumerator BarricadeMovedCoroutine()
+    {
+        yield return new WaitForEndOfFrame();
+        UpdateWires();
+        foreach (var steamplayer in Provider.clients)
+        {
+            var equipment = UnturnedPlayer.FromSteamPlayer(steamplayer).Player.equipment.asset;
+            if (equipment == null)
+                continue;
+            if (_assets.WiredAssets.ContainsKey(equipment.GUID) && _assets.WiredAssets[equipment.GUID] is WiringToolAsset)
+                UpdateNodesView(steamplayer.playerID.steamID);
+        }
+    }
+
+    private void OnUseableChanged_Global(PlayerEquipment obj)
+    {
+        var player = obj.player;
+        var asset = obj.asset;
+        if(asset != null)
+        {
+            if (_assets.WiredAssets.ContainsKey(asset.GUID) && _assets.WiredAssets[asset.GUID] is WiringToolAsset)
+            {
+                UpdateNodesView(player.channel.owner.playerID.steamID);
+            }
+            else
+            {
+                player.ServerShowHint("", 0);
+                UnturnedPlayer uplayer = UnturnedPlayer.FromPlayer(player);
+                _playersInLinkingMode.Remove(uplayer);
+                _lookingAt.Remove(uplayer.CSteamID);
+                _selectedNode.Remove(player.channel.owner.playerID.steamID);
+                ClearNodeView(player.channel.owner.playerID.steamID);
+                ClearPreviewView(player.channel.owner.playerID.steamID);
+                ClearSelectedView(player.channel.owner.playerID.steamID);
+                return;
+            }
+        }
+        else
+        {
+            player.ServerShowHint("", 0);
+            UnturnedPlayer uplayer = UnturnedPlayer.FromPlayer(player);
+            _playersInLinkingMode.Remove(uplayer);
+            _lookingAt.Remove(uplayer.CSteamID);
+            _selectedNode.Remove(player.channel.owner.playerID.steamID);
+            ClearNodeView(player.channel.owner.playerID.steamID);
+            ClearPreviewView(player.channel.owner.playerID.steamID);
+            ClearSelectedView(player.channel.owner.playerID.steamID);
+            return;
+        }
     }
 
     private void OnPlayerConnected(UnturnedPlayer player)
@@ -181,42 +239,6 @@ public class PlayerViewService : MonoBehaviour
             UpdateNodesView(obj.player.channel.owner.playerID.steamID);
         }
     }
-
-    private void OnEquipRequested(Player player, ItemAsset asset, ref bool shouldAllow)
-    {
-        if (_assets.WiredAssets.ContainsKey(asset.GUID) && _assets.WiredAssets[asset.GUID] is WiringToolAsset)
-        {
-            UpdateNodesView(player.channel.owner.playerID.steamID);
-        }
-        else
-        {
-            player.ServerShowHint("", 0);
-            UnturnedPlayer uplayer = UnturnedPlayer.FromPlayer(player);
-            _playersInLinkingMode.Remove(uplayer);
-            _lookingAt.Remove(uplayer.CSteamID);
-            _selectedNode.Remove(player.channel.owner.playerID.steamID);
-            ClearNodeView(player.channel.owner.playerID.steamID);
-            ClearPreviewView(player.channel.owner.playerID.steamID);
-            ClearSelectedView(player.channel.owner.playerID.steamID);
-            return;
-        }
-    }
-
-    private void OnDequipRequested(Player player, ItemAsset asset, ref bool shouldAllow)
-    {
-        if (_assets.WiredAssets.ContainsKey(asset.GUID) && _assets.WiredAssets[asset.GUID] is WiringToolAsset)
-        {
-            player.ServerShowHint("", 0);
-            UnturnedPlayer uplayer = UnturnedPlayer.FromPlayer(player);
-            _playersInLinkingMode.Remove(uplayer);
-            _lookingAt.Remove(uplayer.CSteamID);
-            _selectedNode.Remove(player.channel.owner.playerID.steamID);
-            ClearNodeView(player.channel.owner.playerID.steamID);
-            ClearPreviewView(player.channel.owner.playerID.steamID);
-            ClearSelectedView(player.channel.owner.playerID.steamID);
-        }
-    }
-
     private void OnNodeSelectionCleared(UnturnedPlayer player)
     {
         player.Player.ServerShowHint("Selection cleared.", 2f);

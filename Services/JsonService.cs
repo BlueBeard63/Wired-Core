@@ -116,6 +116,8 @@ namespace Wired.Services
 
             int restoredCount = 0;
 
+
+            bool errorsOccured = false;
             foreach (var data in loadedData)
             {
                 bool hasNode1 = nodes.TryGetValue(data.Node1ID, out IElectricNode node1);
@@ -151,6 +153,7 @@ namespace Wired.Services
                 {
                     WiredLogger.Error($"Failed to connect {data.Node1ID} -> {data.Node2ID}. " +
                                       $"Found Node1? {hasNode1}, Found Node2? {hasNode2}");
+                    errorsOccured = true;
 
                     if (nodes.Count > 0 && nodes.Count < 10)
                         WiredLogger.Info($"Available Keys: {string.Join(", ", nodes.Keys)}");
@@ -159,6 +162,14 @@ namespace Wired.Services
 
             WiredLogger.Info($"loadedData count: {loadedData.Count}");
             WiredLogger.Info($"Restored {restoredCount} connections from {_savepath}");
+
+                var filename = $"Nodes-Backup-{DateTime.Now.Month}_{DateTime.Now.Day}__{DateTime.Now.ToString("HH:mm:ss")}.json";
+                File.Create(filename);
+                File.Copy(_savepath, Path.Combine(Plugin.Instance.Directory, filename));
+                WiredLogger.Info($"Created Nodes backup file \"{filename}\"");
+            if (errorsOccured)
+            {
+            }
         }
     }
     [Serializable]

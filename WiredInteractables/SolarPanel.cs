@@ -6,7 +6,6 @@ using Wired.Models;
 using Wired.Services;
 using Wired.Utilities;
 using Wired.WiredAssets;
-using static UnityEngine.Rendering.VirtualTexturing.Debugging;
 
 namespace Wired.WiredInteractables;
 
@@ -112,11 +111,11 @@ public class SolarPanel : MonoBehaviour, IWiredInteractable
 
         var newsupply = Asset.Supply * efficiency;
         _supplierNode.Supply = (float)Math.Round(newsupply);
-        if(newsupply <= 0f && _supplierNode.IsPowered)
+        if(_supplierNode.Supply <= 0f && _supplierNode.IsPowered)
         {
             _supplierNode.SetPowered(false);
         }
-        else if(newsupply > 0f && !_supplierNode.IsPowered)
+        else if(_supplierNode.Supply > 0f && !_supplierNode.IsPowered)
         {
             _supplierNode.SetPowered(true);
         }

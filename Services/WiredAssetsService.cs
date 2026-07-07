@@ -30,7 +30,8 @@ namespace Wired.Services
             new ConsumerAsset(new Guid("1f8856edf5964774aa2457b37e45603b"), 400), // Safezone Radiator
             new ConsumerAsset(new Guid("ea56c734f3614983a5381bbce91ba79a"), 400), // Oxygenator
 
-            new EngineerGogglesAsset(new Guid("778e144e9b324e68970470e1be9c3167")), // Civilian nightvision masterbundle override, DELETE LATER!!!!!!!!!!!!
+            new EngineerGogglesAsset(new Guid("ebae0feefc29432592b9f713db108991")), // Hardcoded default engineering goggles, gotta write the thingies later
+
         ];
         public WiredAssetsService()
         {
@@ -59,13 +60,13 @@ namespace Wired.Services
                     "WiredType WiringTool",
                     "WiredType RemoteTool",
                     "WiredType ManualTablet",
+                    "WiredType EngineeringGoggles",
                     "WiredType Consumer",
                     "WiredType Supplier",
                     "WiredType Gate",
                 ];
                 if (parser.HasAnyEntry(stringstoparse, out var foundentry))
                 {
-                    WiredLogger.Info($"Found wired asset: {asset.name} ({asset.GUID}) as {foundentry}");
                     switch (foundentry.Split(' ')[1])
                     {
                         case "WiringTool":
@@ -76,6 +77,9 @@ namespace Wired.Services
                             break;
                         case "ManualTablet":
                             WiredAssets.Add(asset.GUID, new ManualTabletAsset(asset.GUID));
+                            break;
+                        case "EngineeringGoggles":
+                            WiredAssets.Add(asset.GUID, new EngineerGogglesAsset(asset.GUID));
                             break;
                         case "Gate":
                             PopulateGate(parser, asset);
@@ -98,6 +102,16 @@ namespace Wired.Services
             if (parser.HasEntry("WiredBuild Switch"))
             {
                 WiredAssets.Add(asset.GUID, new SwitchAsset(asset.GUID, true));
+                WiredLogger.Info($"Found wired asset: {asset.name} ({asset.GUID}) as Type Gate; Build Switch");
+            }
+            else if(parser.HasEntry("WiredBuild Button"))
+            {
+                WiredAssets.Add(asset.GUID,
+                    new ButtonAsset(
+                    guid: asset.GUID,
+                    staysPressedSecons: parser.TryGetFloat("StaysPressed_Seconds", out float sps) ? sps : 2f));
+
+                WiredLogger.Info($"Found wired asset: {asset.name} ({asset.GUID}) as Type Gate; Build Button");
             }
             else if (parser.HasEntry("WiredBuild PlayerDetector"))
             {
@@ -105,6 +119,7 @@ namespace Wired.Services
                 new PlayerDetectorAsset(
                 guid: asset.GUID,
                 radius: parser.TryGetFloat("Radius", out float radius) ? radius : 3f));
+                WiredLogger.Info($"Found wired asset: {asset.name} ({asset.GUID}) as Type Gate; Build PlayerDetector");
             }
             else if (parser.HasEntry("WiredBuild Timer"))
             {
@@ -112,10 +127,12 @@ namespace Wired.Services
                 new TimerAsset(
                 guid: asset.GUID,
                 delayseconds: parser.TryGetFloat("Timer_Delay_Seconds", out float delay) ? delay : 5));
+                WiredLogger.Info($"Found wired asset: {asset.name} ({asset.GUID}) as Type Gate; Build Timer");
             }
             else if (parser.HasEntry("WiredBuild RemoteReceiver"))
             {
                 WiredAssets.Add(asset.GUID, new RemoteReceiverAsset(asset.GUID));
+                WiredLogger.Info($"Found wired asset: {asset.name} ({asset.GUID}) as Type Gate; Build RemoteReceiver");
             }
             else if (parser.HasEntry("WiredBuild Keypad"))
             {
@@ -123,12 +140,14 @@ namespace Wired.Services
                 new KeypadAsset(
                 guid: asset.GUID,
                 staysOpenSeconds: parser.TryGetFloat("StaysOpenSeconds", out float seconds) ? seconds : 3));
+                WiredLogger.Info($"Found wired asset: {asset.name} ({asset.GUID}) as Type Gate; Build Keypad");
             }
             else if (parser.HasEntry("WiredBuild Connector"))
             {
                 WiredAssets.Add(asset.GUID,
                     new ConnectorAsset(
                     guid: asset.GUID));
+                WiredLogger.Info($"Found wired asset: {asset.name} ({asset.GUID}) as Type Gate; Build Connector");
             }
             else if (parser.HasEntry("WiredBuild LogicGate"))
             {
@@ -148,6 +167,7 @@ namespace Wired.Services
                 {
                     WiredLogger.Error($"Logic Gate asset {asset.FriendlyName} has invalid Wired configuration.");
                 }
+                WiredLogger.Info($"Found wired asset: {asset.name} ({asset.GUID}) as Type Gate; Build LogicGate");
             }
         }
         private void PopulateConsumer(AssetParser parser, ItemAsset asset)

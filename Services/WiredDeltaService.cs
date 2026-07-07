@@ -145,6 +145,7 @@ namespace Wired.Services
         }
         public async void Disconnect(IRocketPlayer caller)
         {
+            if (!IsConnected()) return;
             await Disconnect();
             if (!IsConnected())
             {

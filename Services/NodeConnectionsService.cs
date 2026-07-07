@@ -30,7 +30,7 @@ namespace Wired.Services
             Networks = [];
 
             WiringToolService.OnNodeLinkRequested += OnNodeLinkRequested;
-            Plugin.OnSwitchToggled += OnSwitchToggled;
+            Plugin.OnGateToggled += OnSwitchToggled;
             Plugin.OnTimerExpired += OnTimerExpired;
             Plugin.OnGeneratorFuelUpdated += OnGeneratorFuelUpdated;
             Plugin.OnGeneratorPoweredChanged += OnGeneratorPoweredChanged;
