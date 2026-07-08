@@ -12,8 +12,8 @@ namespace Wired.WiredInteractables;
 public class SolarPanel : MonoBehaviour, IWiredInteractable
 {
     public Interactable interactable { get; private set; }
-    public SolarPanelAsset Asset { get; set; }
     private SupplierNode _supplierNode;
+    private SolarPanelAsset _asset;
 
     public bool IsOn { get; }
 
@@ -39,9 +39,17 @@ public class SolarPanel : MonoBehaviour, IWiredInteractable
         interactable = spot;
 
         Plugin.OnTimeOfDayUpdated += OnTimeOfDayUpdated;
-        _supplierNode = gameObject.GetComponent<SupplierNode>();
+        BarricadeDrop.OnSalvageRequested_Global += OnSalvageRequested_Global;
 
-        if (Asset.HasMovingPart)
+        _supplierNode = gameObject.GetComponent<SupplierNode>();
+        _asset = (SolarPanelAsset)_supplierNode.Asset;
+        if(_supplierNode == null || _asset == null)
+        {
+            WiredLogger.Error($"Solar panel \"{BarricadeManager.FindBarricadeByRootTransform(this.transform).asset.FriendlyName}\" didn't initialize properly.");
+            Uninitialize();
+        }
+
+        if (_asset.HasMovingPart)
         {
             _MovingPartGameobj = transform.Find("MovingPart");
         }
@@ -59,13 +67,12 @@ public class SolarPanel : MonoBehaviour, IWiredInteractable
             }
         }
 
-        BarricadeDrop.OnSalvageRequested_Global += OnSalvageRequested_Global;
         OnTimeOfDayUpdated(LightingManager.time, (float)LightingManager.time / (float)LightingManager.cycle);
     }
 
     private void OnSalvageRequested_Global(BarricadeDrop barricade, SteamPlayer instigatorClient, ref bool shouldAllow)
     {
-        if (!Asset.HasMovingPart) return;
+        if (!_asset.HasMovingPart) return;
         if(barricade.model == MovingPart)
         {
             shouldAllow = false;
@@ -75,7 +82,7 @@ public class SolarPanel : MonoBehaviour, IWiredInteractable
             BarricadeManager.tryGetRegion(MovingPart, out x, out y, out plant, out _);
             BarricadeManager.destroyBarricade(BarricadeManager.FindBarricadeByRootTransform(MovingPart), x, y, plant);
 
-            ItemTool.tryForceGiveItem(instigatorClient.player, (Assets.find(this.Asset.GUID) as ItemAsset).id, 1);
+            ItemTool.tryForceGiveItem(instigatorClient.player, (Assets.find(this._asset.GUID) as ItemAsset).id, 1);
         }
         else if(barricade.model == this.transform)
         {
@@ -105,11 +112,11 @@ public class SolarPanel : MonoBehaviour, IWiredInteractable
         var truetime = (float)LightingManager.time / (float)LightingManager.cycle;
         float sunangle = Math.Abs((truetime / bias * 180f) / 1f - bias);
 
-        if(Asset.HasMovingPart) RotateMovingPart(sunangle);
+        if(_asset.HasMovingPart) RotateMovingPart(sunangle);
 
         var efficiency = GetSolarPanelEfficiency(sunangle);
 
-        var newsupply = Asset.Supply * efficiency;
+        var newsupply = _asset.Supply * efficiency;
         _supplierNode.Supply = (float)Math.Round(newsupply);
         if(_supplierNode.Supply <= 0f && _supplierNode.IsPowered)
         {
@@ -132,7 +139,7 @@ public class SolarPanel : MonoBehaviour, IWiredInteractable
         Quaternion sunRotation = Quaternion.Euler(-sunangle, LevelLighting.azimuth, 0f);
         Vector3 sunDirection = sunRotation * Vector3.forward;
 
-        if(Asset.HasMovingPart)
+        if(_asset.HasMovingPart)
         {
             PanelNormal = new Vector3(-MovingPart.forward.x, MovingPart.forward.y, -MovingPart.forward.z);
         }
@@ -149,7 +156,7 @@ public class SolarPanel : MonoBehaviour, IWiredInteractable
     }
     private void RotateMovingPart(float sunangle)
     {
-        if(sunangle - 90f > Asset.MovingPartMaxAngle)
+        if(sunangle - 90f > _asset.MovingPartMaxAngle)
         {
             _movesToDefaultPosition = true;
             return;

@@ -597,7 +597,7 @@ public class PlayerViewService : MonoBehaviour
 
                     EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Name_Supplier", $"{drop.asset.FriendlyName}");
                     EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Stat_Supplier_Supply", $"{Math.Round(sup.Supply, 1)}pu");
-                    EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Stat_Supplier_Powered", sup.IsPowered ? "Yes" : "No");
+                    EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Stat_Supplier_Powered", sup.Supply > 0f ? "Yes" : "No");
                     EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Supplier", true);
                 }
                 break;
@@ -619,7 +619,7 @@ public class PlayerViewService : MonoBehaviour
                     EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Consumer", false);
 
                     EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Name_Switch", $"{drop.asset.FriendlyName}");
-                    EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Stat_Switch_IsOn", sw.IsPowered ? "Yes" : "No");
+                    EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Stat_Switch_IsOn", sw.AllowPowerThrough ? "Yes" : "No");
                     EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Switch", true);
                 }
                 break;

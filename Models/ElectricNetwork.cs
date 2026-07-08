@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Wired.Utilities;
+using Wired.WiredInteractables;
 
 namespace Wired.Models
 {
@@ -58,6 +59,7 @@ namespace Wired.Models
                     continue;
 
                 List<IElectricNode> islandNodes = [];
+                List<Battery> islandBatteries = [];
                 float currentIslandSupply = 0f;
                 float currentIslandConsumption = 0f;
 
@@ -70,8 +72,16 @@ namespace Wired.Models
                     var current = queue.Dequeue();
                     islandNodes.Add(current);
 
-                    if (current is SupplierNode sup && sup.IsPowered) currentIslandSupply += sup.Supply;
-                    if (current is ConsumerNode cons) currentIslandConsumption += cons.Consumption;
+                    if(current is SupplierNode sup && sup.TryGetComponent(out Battery b))
+                    {
+                        if(!islandBatteries.Contains(b))
+                            islandBatteries.Add(b);
+                    }
+                    else
+                    {
+                        if (current is SupplierNode sup2 && sup2.IsPowered) currentIslandSupply += sup2.Supply;
+                        if (current is ConsumerNode cons) currentIslandConsumption += cons.Consumption;
+                    }
 
                     if (!current.AllowPowerThrough)
                         continue;
@@ -89,8 +99,58 @@ namespace Wired.Models
                     }
                 }
 
-                bool hasEnoughPower = currentIslandSupply > 0 &&
+
+                bool hasEnoughPower;
+
+                if(islandBatteries.Count > 0)
+                {
+                    var netpower = currentIslandSupply - currentIslandConsumption;
+                    if (netpower >= 0f)
+                    {
+                        hasEnoughPower = currentIslandSupply > 0 || (currentIslandSupply == 0 && currentIslandSupply == 0);
+
+                        var chargePerBattery = netpower / islandBatteries.Count;
+
+                        foreach(var bat in islandBatteries)
+                        {
+                            if (bat.Charge < bat.MaxCapacity)
+                                bat.SetState(BatteryState.Charging, Math.Min(1f, chargePerBattery / bat.Supply));
+                        }
+                    }
+                    else
+                    {
+                        var deficit = Math.Abs(netpower);
+                        var totalBatteryOutput = 0f;
+
+                        foreach(var bat in islandBatteries)
+                        {
+                            if(bat.Charge > 0)
+                                totalBatteryOutput += bat.Supply;
+                        }
+                        if(totalBatteryOutput >= deficit)
+                        {
+                            hasEnoughPower = true;
+
+                            foreach(var bat in islandBatteries)
+                            {
+                                if(bat.Charge > 0)
+                                {
+                                    var ratio = bat.Supply / totalBatteryOutput;
+                                    bat.SetState(BatteryState.Discharging, Math.Min(1f, ratio));
+                                }
+                            }
+                        }
+                        else
+                        {
+                            hasEnoughPower = false;
+                        }
+                    }
+                }
+                else
+                {
+                    hasEnoughPower = currentIslandSupply > 0 &&
                                       currentIslandSupply >= currentIslandConsumption;
+                }
 
                 foreach (var node in islandNodes)
                 {

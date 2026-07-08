@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SDG.Unturned;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -27,7 +28,7 @@ namespace Wired.Services
             PlayerViewService = new GameObject("PlayerViewService").AddComponent<PlayerViewService>();
             PlayerViewService.Init(WiredAssetsService, resources, NodeConnectionsService, WiringToolService.SelectedNode);
             KeypadUIService = new KeypadUIService();
-            JsonService = new JsonService(NodeConnectionsService, Path.Combine(Plugin.Instance.Directory, "Nodes.json"));
+            JsonService = new JsonService(NodeConnectionsService, Path.Combine(Plugin.Instance.Directory, $"Nodes_{Provider.map}.json"));
             JsonService.LoadFromJson();
             WiredDeltaService = new GameObject("WiredDeltaService").AddComponent<WiredDeltaService>();
         }

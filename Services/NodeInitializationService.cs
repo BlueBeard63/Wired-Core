@@ -146,7 +146,6 @@ namespace Wired.Services
                     var supplier = barricade.model.gameObject.AddComponent<SupplierNode>();
                     supplier.barricade = barricade;
                     var solar = barricade.model.gameObject.AddComponent<SolarPanel>();
-                    solar.Asset = solarPanelAsset;
                     supplier.Asset = solarPanelAsset;
                     if (solarPanelAsset.HasMovingPart)
                     {
@@ -182,6 +181,13 @@ namespace Wired.Services
                         Console.WriteLine($"No moving part");
                     }
                     createdNode = supplier;
+                    break;
+
+                case BatteryAsset batteryAsset:
+                    var supp = barricade.model.gameObject.AddComponent<SupplierNode>();
+                    supp.barricade = barricade;
+                    supp.Asset = batteryAsset;
+                    var battery = barricade.model.gameObject.AddComponent<Battery>();
                     break;
 
                 case ConsumerAsset consumerAsset:

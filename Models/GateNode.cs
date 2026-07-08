@@ -36,9 +36,8 @@ namespace Wired.Models
                 BarricadeManager.ServerSetSpotPowered(_spot, state);
 
             Plugin.Instance.SendGateToggled(this, state);
-
-
         }
+
         public void Uninitialize()
         {
             if (this.TryGetComponent(out LogicGate lg))

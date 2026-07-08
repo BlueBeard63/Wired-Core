@@ -72,6 +72,8 @@ namespace Wired.Services
         {
             if (!generator.TryGetComponent(out SupplierNode gen))
                 return;
+            if (generator.TryGetComponent<Battery>(out _))
+                return;
             if (generator.fuel <= 0)
                 return;
 

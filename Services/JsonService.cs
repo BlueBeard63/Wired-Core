@@ -163,12 +163,11 @@ namespace Wired.Services
             WiredLogger.Info($"loadedData count: {loadedData.Count}");
             WiredLogger.Info($"Restored {restoredCount} connections from {_savepath}");
 
-                var filename = $"Nodes-Backup-{DateTime.Now.Month}_{DateTime.Now.Day}__{DateTime.Now.ToString("HH:mm:ss")}.json";
-                File.Create(filename);
-                File.Copy(_savepath, Path.Combine(Plugin.Instance.Directory, filename));
-                WiredLogger.Info($"Created Nodes backup file \"{filename}\"");
             if (errorsOccured)
             {
+                var filename = $"Nodes-Backup-{DateTime.Now.Month}_{DateTime.Now.Day}__{DateTime.Now.ToString("HH:mm:ss")}.json";
+                File.Copy(_savepath, Path.Combine(Plugin.Instance.Directory, filename));
+                WiredLogger.Info($"Created Nodes backup file \"{filename}\"");
             }
         }
     }

@@ -29,9 +29,6 @@ namespace Wired.Services
             new ConsumerAsset(new Guid("d3c40816534e48c3af0e26fb4d5f1b1a"), 25), // Clock
             new ConsumerAsset(new Guid("1f8856edf5964774aa2457b37e45603b"), 400), // Safezone Radiator
             new ConsumerAsset(new Guid("ea56c734f3614983a5381bbce91ba79a"), 400), // Oxygenator
-
-            new EngineerGogglesAsset(new Guid("ebae0feefc29432592b9f713db108991")), // Hardcoded default engineering goggles, gotta write the thingies later
-
         ];
         public WiredAssetsService()
         {
@@ -202,6 +199,13 @@ namespace Wired.Services
                 var movingpartid = parser.TryGetFloat("MovingPart_ID", out float mpid) ? mpid : (ushort)0;
                 var movingpartminangle = parser.TryGetFloat("MovingPart_MaxAngle", out float mpmina) ? mpmina : 0f;
                 WiredAssets.Add(asset.GUID, new SolarPanelAsset(asset.GUID, supply, nightmodifier, movingpartminangle, (ushort)movingpartid));
+                return;
+            }
+            if(parser.HasEntry("WiredBuild Battery"))
+            {
+                var capacity = parser.TryGetFloat($"Capacity", out float capa) ? capa : 100f;
+                var maxburn = parser.TryGetFloat($"MaxBurnPerSecond", out float mbps) ? mbps : 1f;
+                WiredAssets.Add(asset.GUID, new BatteryAsset(asset.GUID, supply, capacity, maxburn));
                 return;
             }
 
