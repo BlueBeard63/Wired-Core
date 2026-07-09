@@ -539,7 +539,7 @@ public class PlayerViewService : MonoBehaviour
             EffectAsset wire = _resources.wire_8m;
             float scalemodifier = 1f/8f;
             var distance = Vector3.Distance(con.Node1.WireConnectPoint.position, con.Node2.WireConnectPoint.position);
-            if (distance <= 0.5) continue;
+            if (distance <= 1) continue;
 
             if (distance <= 10 && distance > 6)
             {

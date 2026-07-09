@@ -45,7 +45,7 @@
     <Compile Include="WiredAssets\Placeables\ButtonAsset.cs" />
     <Compile Include="WiredAssets\Placeables\LogicGateAsset.cs" />
     <Compile Include="WiredAssets\Placeables\SolarPanelAsset.cs" />
-    <Compile Include="WiredAssets\Placeables\NetworkDataDisplayAsset.cs" />
+    <Compile Include="WiredAssets\Placeables\NetworkAnalyzerAsset.cs" />
     <Compile Include="WiredAssets\Placeables\ConsumerAsset.cs" />
     <Compile Include="WiredAssets\Placeables\KeypadAsset.cs" />
     <Compile Include="WiredAssets\Placeables\GeneratorAsset.cs" />
@@ -86,7 +86,7 @@
     <Compile Include="WiredInteractables\Keypad.cs" />
     <Compile Include="WiredInteractables\LogicGate.cs" />
     <Compile Include="WiredInteractables\SolarPanel.cs" />
-    <Compile Include="WiredInteractables\NetworkDataDisplay.cs" />
+    <Compile Include="WiredInteractables\NetworkAnalyzer.cs" />
     <Compile Include="WiredInteractables\PlayerDetector.cs" />
     <Compile Include="WiredInteractables\RemoteReceiver.cs" />
     <Compile Include="WiredInteractables\RemoteTransmitter.cs" />

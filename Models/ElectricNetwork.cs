@@ -35,7 +35,11 @@ namespace Wired.Models
 
         public void AddNode(IElectricNode node) => Nodes.Add(node);
         public void AddConnection(NodeConnection conn) => Connections.Add(conn);
-
+        public void RecalculateTwice()
+        {
+            RecalculatePower();
+            _recalculationPending = true;
+        }
         public void RecalculatePower()
         {
             if (_frameLocked)
@@ -62,6 +66,7 @@ namespace Wired.Models
                 List<Battery> islandBatteries = [];
                 float currentIslandSupply = 0f;
                 float currentIslandConsumption = 0f;
+                float totalBatterySupply = 0f;
 
                 Queue<IElectricNode> queue = new();
                 queue.Enqueue(startNode);
@@ -104,6 +109,11 @@ namespace Wired.Models
 
                 if(islandBatteries.Count > 0)
                 {
+                    foreach (var bat in islandBatteries)
+                    {
+                        if (bat.Charge > 0)
+                            totalBatterySupply += bat.Supply;
+                    }
                     var netpower = currentIslandSupply - currentIslandConsumption;
                     if (netpower >= 0f)
                     {
@@ -120,14 +130,7 @@ namespace Wired.Models
                     else
                     {
                         var deficit = Math.Abs(netpower);
-                        var totalBatteryOutput = 0f;
-
-                        foreach(var bat in islandBatteries)
-                        {
-                            if(bat.Charge > 0)
-                                totalBatteryOutput += bat.Supply;
-                        }
-                        if(totalBatteryOutput >= deficit)
+                        if(totalBatterySupply >= deficit)
                         {
                             hasEnoughPower = true;
 
@@ -135,7 +138,7 @@ namespace Wired.Models
                             {
                                 if(bat.Charge > 0)
                                 {
-                                    var ratio = bat.Supply / totalBatteryOutput;
+                                    var ratio = bat.Supply / totalBatterySupply;
                                     bat.SetState(BatteryState.Discharging, Math.Min(1f, ratio));
                                 }
                             }
@@ -152,6 +155,7 @@ namespace Wired.Models
                                       currentIslandSupply >= currentIslandConsumption;
                 }
 
+
                 foreach (var node in islandNodes)
                 {
                     if(node is TimerNode timer)
@@ -165,6 +169,13 @@ namespace Wired.Models
                     if (node.IsPowered != hasEnoughPower)
                     {
                         node.SetPowered(hasEnoughPower);
+                    }
+                    if(node is ConsumerNode cons)
+                    {
+                        if(cons.TryGetComponent(out NetworkAnalyzer na))
+                        {
+                            na.UpdateData(currentIslandSupply + totalBatterySupply, currentIslandConsumption);
+                        }
                     }
                 }
             }

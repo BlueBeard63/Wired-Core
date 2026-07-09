@@ -49,11 +49,5 @@ namespace Wired.Wrappers
             if (_charge != null && powered == true)
                 _charge.Detonate(null);
         }
-
-        
-        public void Uninitialize()
-        {
-            _wiredInteractable?.Uninitialize();
-        }
     }
 }

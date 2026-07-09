@@ -194,18 +194,18 @@ namespace Wired.Services
                     var cons = barricade.model.gameObject.AddComponent<ConsumerNode>();
                     cons.barricade = barricade;
                     cons.Asset = consumerAsset;
-                    cons.SetPowered(false);
                     cons.Consumption = consumerAsset.Consumption;
+                    cons.SetPowered(false);
                     createdNode = cons;
                     break;
 
-                case NetworkDataDisplayAsset networkDataDisplayAsset:
+                case NetworkAnalyzerAsset networkDataDisplayAsset:
                     var ndaa = barricade.model.gameObject.AddComponent<ConsumerNode>();
                     ndaa.barricade = barricade;
-                    barricade.model.gameObject.AddComponent<NetworkDataDisplay>();
                     ndaa.Asset = networkDataDisplayAsset;
-                    ndaa.SetPowered(false);
                     ndaa.Consumption = networkDataDisplayAsset.Consumption;
+                    barricade.model.gameObject.AddComponent<NetworkAnalyzer>();
+                    ndaa.SetPowered(false);
                     createdNode = ndaa;
                     break;
 
@@ -219,6 +219,7 @@ namespace Wired.Services
                     createdNode = bca;
                     break;
             }
+            WiredLogger.Info($"Initialized WiredAsset {barricade.asset.FriendlyName} as {asset}");
             BarricadeFinder finder = new(position: barricade.model.position);
             if (!finder.GetBarricadesInRadius(radius: 128).Any(b => b.asset != null && b.asset.GUID == Plugin.Instance.Resources.generator_technical.GUID))
             {

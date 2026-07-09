@@ -61,20 +61,16 @@ public class Battery : MonoBehaviour, IWiredInteractable
                 Charge = Charge - _currentBurn <= 0 ? 0 : Charge - _currentBurn;
                 break;
         }
+        _supplierNode.Supply = Charge > 0 ? _asset.Supply : 0f;
         if(Charge <= 0 && State != BatteryState.Idle)
         {
             NodeConnectionsService.RecalculatePowerForNode(_supplierNode);
             State = BatteryState.Idle;
-            _supplierNode.Supply = 0f;
         }
         else if (Charge > 0 && State == BatteryState.Idle)
         {
             _supplierNode.Supply = _asset.Supply;
             NodeConnectionsService.RecalculatePowerForNode(_supplierNode);
-        }
-        else
-        {
-            _supplierNode.Supply = _asset.Supply;
         }
 
         if(interactable is InteractableSpot spot)

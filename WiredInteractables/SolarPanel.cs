@@ -156,7 +156,7 @@ public class SolarPanel : MonoBehaviour, IWiredInteractable
     }
     private void RotateMovingPart(float sunangle)
     {
-        if(sunangle - 90f > _asset.MovingPartMaxAngle)
+        if(Math.Abs(sunangle - 90f) > _asset.MovingPartMaxAngle)
         {
             if(LightingManager.isNighttime)
                 _movesToDefaultPosition = true;
@@ -177,6 +177,11 @@ public class SolarPanel : MonoBehaviour, IWiredInteractable
     {
         Plugin.OnTimeOfDayUpdated -= OnTimeOfDayUpdated;
         BarricadeDrop.OnSalvageRequested_Global -= OnSalvageRequested_Global;
+        if(MovingPart != null)
+        {
+            BarricadeManager.tryGetRegion(MovingPart, out byte x, out byte y, out ushort plant, out _);
+            BarricadeManager.destroyBarricade(BarricadeManager.FindBarricadeByRootTransform(MovingPart), x, y, plant);
+        }
         Destroy(this);
     }
 }

@@ -58,6 +58,9 @@ namespace Wired
         public delegate void TimeOfDayUpdated(uint timeOfDay, float timefraction);
         public static event TimeOfDayUpdated OnTimeOfDayUpdated;
 
+        public delegate void BarricadeDestroyed(BarricadeDrop barricade);
+        public static event BarricadeDestroyed OnBarricadeDestroyed;
+
         protected override void Load()
         {
             Instance = this;
@@ -258,14 +261,7 @@ namespace Wired
         {
             public static bool Prefix(BarricadeManager __instance, BarricadeDrop barricade, byte x, byte y, ushort plant)
             {
-                if(barricade.model.TryGetComponent(out IElectricNode node))
-                {
-                    Plugin.Instance.Services.NodeConnectionsService.NodeDestroyed(node);
-                }
-                if(barricade.model.TryGetComponent(out IWiredInteractable wa))
-                {
-                    wa.Uninitialize();
-                }
+                OnBarricadeDestroyed?.Invoke(barricade);
                 return true;
             }
         }

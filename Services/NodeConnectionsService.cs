@@ -34,10 +34,12 @@ namespace Wired.Services
             Plugin.OnTimerExpired += OnTimerExpired;
             Plugin.OnGeneratorFuelUpdated += OnGeneratorFuelUpdated;
             Plugin.OnGeneratorPoweredChanged += OnGeneratorPoweredChanged;
+            Plugin.OnBarricadeDestroyed += OnNodeDestroyed;
         }
 
-        public void NodeDestroyed(IElectricNode node)
+        public void OnNodeDestroyed(BarricadeDrop drop)
         {
+            if(drop.model.TryGetComponent(out IElectricNode node))
             if(node is GateNode gn)
             {
                 if(gn.TryGetComponent(out LogicGate lg))
@@ -57,6 +59,10 @@ namespace Wired.Services
                 DisconnectNodes(null, n);
 
                 node.Uninitialize();
+            }
+            if(drop.model.TryGetComponent(out IWiredInteractable wa))
+            {
+                wa.Uninitialize();
             }
         }
 
@@ -124,7 +130,7 @@ namespace Wired.Services
         {
             if (_nodeToNetwork.TryGetValue(sw, out ElectricNetwork net))
             {
-                net.RecalculatePower();
+                net.RecalculateTwice();
             }
         }
 
