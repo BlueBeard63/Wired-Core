@@ -43,15 +43,41 @@ public class SolarPanel : MonoBehaviour, IWiredInteractable
 
         _supplierNode = gameObject.GetComponent<SupplierNode>();
         _asset = (SolarPanelAsset)_supplierNode.Asset;
-        if(_supplierNode == null || _asset == null)
+
+        var barricade = BarricadeManager.FindBarricadeByRootTransform(this.transform);
+        if (_supplierNode == null || _asset == null)
         {
-            WiredLogger.Error($"Solar panel \"{BarricadeManager.FindBarricadeByRootTransform(this.transform).asset.FriendlyName}\" didn't initialize properly.");
+            WiredLogger.Error($"Solar panel \"{barricade.asset.FriendlyName}\" didn't initialize properly.");
             Uninitialize();
         }
 
         if (_asset.HasMovingPart)
         {
             _MovingPartGameobj = transform.Find("MovingPart");
+            if (_MovingPartGameobj == null)
+            {
+                WiredLogger.Error($"MovingPart transform of \"{barricade.asset.FriendlyName}\" is missing.");
+                return;
+            }
+
+            var bar = new Barricade(Assets.find(EAssetType.ITEM, _asset.MovingPartId) as ItemBarricadeAsset);
+            if (bar == null)
+            {
+                WiredLogger.Error($"Couldn't find barricade asset for MovingPart of \"{barricade.asset.FriendlyName}\".");
+                return;
+            }
+
+            Transform movingPartTransform = BarricadeManager.dropNonPlantedBarricade(
+                bar,
+                _MovingPartGameobj.position,
+                barricade.model.rotation,
+                barricade.GetServersideData().owner,
+                barricade.GetServersideData().group
+            );
+            Console.WriteLine($"Moving part created at {movingPartTransform.position}, root position: {barricade.model.position}");
+
+            MovingPart = movingPartTransform;
+            PanelNormal = movingPartTransform.up;
         }
         else
         {

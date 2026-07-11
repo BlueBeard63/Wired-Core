@@ -587,43 +587,62 @@ public class PlayerViewService : MonoBehaviour
             return;
         }
 
+        EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Container", true);
         switch (node)
         {
             case SupplierNode sup:
+                SendGogglesUIText(steamid, "Text_Name", $"<color=#FF9F00>{drop.asset.FriendlyName}");
+                SendGogglesUIText(steamid, "Text_0", $"Supply: <color=#00eeff>{Math.Round(sup.Supply, 1)}pu");
+                if(sup.TryGetComponent(out Battery battery))
                 {
-                    EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Consumer", false);
-                    EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Switch", false);
-
-
-                    EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Name_Supplier", $"{drop.asset.FriendlyName}");
-                    if(sup.TryGetComponent(out Battery battery))
-                        EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Stat_Supplier_Supply", $"{Math.Round(battery.Charge, 1)}; {Math.Round(sup.Supply, 1)}");
-                    else    
-                        EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Stat_Supplier_Supply", $"{Math.Round(sup.Supply, 1)}pu");
-                    EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Stat_Supplier_Powered", sup.Supply > 0f ? "Yes" : "No");
-                    EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Supplier", true);
+                    SendGogglesUIText(steamid, "Text_1", $"Charge: <color=#00eeff>{Math.Round((battery.Charge/battery.MaxCapacity) * 100)}%");
+                    SendGogglesUIText(steamid, "Text_2", node.IsPowered ? "Powered: <color=#00eeff>Yes" : "Powered: <color=#00eeff>No");
+                }
+                else
+                {
+                    SendGogglesUIText(steamid, "Text_1", node.IsPowered ? "Powered: <color=#00eeff>Yes" : "Powered: <color=#00eeff>No");
                 }
                 break;
             case ConsumerNode cons:
+                SendGogglesUIText(steamid, "Text_Name", $"<color=#6AFF2A>{drop.asset.FriendlyName}");
+                SendGogglesUIText(steamid, "Text_0", $"Consumption: <color=#00eeff>{Math.Round(cons.Consumption, 1)}pu");
+                if (cons.TryGetComponent(out RemoteTransmitter transmitter))
                 {
-                    EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Supplier", false);
-                    EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Switch", false);
-
-
-                    EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Name_Consumer", $"{drop.asset.FriendlyName}");
-                    EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Stat_Consumer_Consumption", $"{cons.Consumption}pu");
-                    EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Stat_Consumer_Powered", cons.IsPowered ? "Yes" : "No");
-                    EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Consumer", true);
+                    SendGogglesUIText(steamid, "Text_1", $"Frequency: <color=#00eeff>{transmitter.Frequency}");
+                    SendGogglesUIText(steamid, "Text_2", node.IsPowered ? "Powered: <color=#00eeff>Yes" : "Powered: <color=#00eeff>No");
+                }
+                else
+                {
+                    SendGogglesUIText(steamid, "Text_1", node.IsPowered ? "Powered: <color=#00eeff>Yes" : "Powered: <color=#00eeff>No");
                 }
                 break;
             case GateNode sw:
+                SendGogglesUIText(steamid, "Text_Name", $"<color=#6AFF2A>{drop.asset.FriendlyName}");
+                SendGogglesUIText(steamid, "Text_0", $"Gate: " + (sw.AllowPowerThrough ? "<color=#00eeff>Open" : "<color=#00eeff>Closed"));
+                if(sw.TryGetComponent(out RemoteReceiver receiver))
                 {
-                    EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Supplier", false);
-                    EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Consumer", false);
-
-                    EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Name_Switch", $"{drop.asset.FriendlyName}");
-                    EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Stat_Switch_IsOn", sw.AllowPowerThrough ? "Yes" : "No");
-                    EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Box_Switch", true);
+                    SendGogglesUIText(steamid, "Text_1", $"Frequency: <color=#00eeff>{receiver.Frequency}");
+                    break;
+                }
+                if(sw.TryGetComponent(out LogicGate lg))
+                {
+                    SendGogglesUIText(steamid, "Text_1", $"Type: <color=#00eeff>{lg.Type}");
+                    SendGogglesUIText(steamid, "Text_2", $"Input 1: " + (lg.Input0.IsPowered ? "<color=#00eeff>True" : "<color=#00eeff>False"));
+                    SendGogglesUIText(steamid, "Text_3", $"Input 2: " + (lg.Input1.IsPowered ? "<color=#00eeff>True" : "<color=#00eeff>False"));
+                    break;
+                }
+                if(sw.TryGetComponent(out Keypad kp))
+                {
+                    if(drop.GetServersideData().owner == steamid.m_SteamID)
+                    {
+                        SendGogglesUIText(steamid, "Text_1", $"Code: " + (kp.Code == string.Empty ? "<color=#00eeff>Not set" : $"<color=#00eeff>{kp.Code}"));
+                    }
+                    break;
+                }
+                if(sw.TryGetComponent(out Button button))
+                {
+                    SendGogglesUIText(steamid, "Text_1", $"Action time: <color=#00eeff>{button.StaysPressedSeconds} seconds");
+                    break;
                 }
                 break;
             default:
@@ -647,9 +666,7 @@ public class PlayerViewService : MonoBehaviour
     }
     private void ClearGogglesView(CSteamID steamid)
     {
-        EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), false, "Box_Supplier", false);
-        EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), false, "Box_Consumer", false);
-        EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), false, "Box_Switch", false);
+        EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), false, "Container", false);
     }
     private void TracePath(UnturnedPlayer player, Vector3 point1, Vector3 point2, EffectAsset pathEffect)
     {
@@ -685,7 +702,15 @@ public class PlayerViewService : MonoBehaviour
         effect.SetRelevantPlayer(player.SteamPlayer());
         EffectManager.triggerEffect(effect);
     }
-
+    private void SendGogglesUIText(CSteamID steamid, string gameobjorpath, string text)
+    {
+        if (gameobjorpath.StartsWith("Text_"))
+        {
+            var field = "Field_" + gameobjorpath.Split('_')[1];
+            EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, field, true);
+        }
+        EffectManager.sendUIEffectText(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, gameobjorpath, text);
+    }
     private bool DoesOwnDrop(BarricadeDrop drop, CSteamID steamid)
     {
         var dropdata = drop.GetServersideData();

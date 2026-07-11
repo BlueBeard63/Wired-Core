@@ -147,39 +147,6 @@ namespace Wired.Services
                     supplier.barricade = barricade;
                     var solar = barricade.model.gameObject.AddComponent<SolarPanel>();
                     supplier.Asset = solarPanelAsset;
-                    if (solarPanelAsset.HasMovingPart)
-                    {
-                        Console.WriteLine($"Has moving part");
-                        var movingPartGameObj = supplier.transform.Find("MovingPart");
-                        if (movingPartGameObj == null)
-                        {
-                            WiredLogger.Error($"MovingPart transform of \"{barricade.asset.FriendlyName}\" is missing.");
-                            return;
-                        }
-
-                        var bar = new Barricade(Assets.find(EAssetType.ITEM, solarPanelAsset.MovingPartId) as ItemBarricadeAsset);
-                        if(bar == null)
-                        {
-                            WiredLogger.Error($"Couldn't find barricade asset for MovingPart of \"{barricade.asset.FriendlyName}\".");
-                            return;
-                        }
-
-                        Transform movingPartTransform = BarricadeManager.dropNonPlantedBarricade(
-                            bar,
-                            movingPartGameObj.position,
-                            barricade.model.rotation,
-                            barricade.GetServersideData().owner,
-                            barricade.GetServersideData().group
-                        );
-                        Console.WriteLine($"Moving part created at {movingPartTransform.position}, root position: {barricade.model.position}");
-
-                        solar.MovingPart = movingPartTransform;
-                        solar.PanelNormal = movingPartTransform.up;
-                    }
-                    else
-                    {
-                        Console.WriteLine($"No moving part");
-                    }
                     createdNode = supplier;
                     break;
 

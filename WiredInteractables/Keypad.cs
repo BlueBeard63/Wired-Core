@@ -20,7 +20,7 @@ public class Keypad : MonoBehaviour, IWiredInteractable
     public bool IsOn => false;
     public float StaysOnSeconds;
     private uint _instanceId;
-    private string _code = "";
+    public string Code = string.Empty;
 
     private void Awake()
     {
@@ -34,14 +34,14 @@ public class Keypad : MonoBehaviour, IWiredInteractable
     {
         if (keypadInstanceId != _instanceId) return;
 
-        if (_code == "")
+        if (Code == string.Empty)
         {
-            _code = code;
+            Code = code;
             UnturnedPlayer.FromCSteamID(steamid).Player.ServerShowHint($"Set keypad code to: {code}", 2f);
         }
         else
         {
-            if (_code == code)
+            if (Code == code)
             {
                 WiredLogger.Info($"Keypad code correct for instance {_instanceId}, activating connected nodes.");
                 transform.GetComponent<GateNode>().Switch(true);
