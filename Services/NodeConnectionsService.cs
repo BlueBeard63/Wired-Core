@@ -130,7 +130,7 @@ namespace Wired.Services
         {
             if (_nodeToNetwork.TryGetValue(sw, out ElectricNetwork net))
             {
-                net.RecalculateTwice();
+                net.RecalculatePower();
             }
         }
 

@@ -25,7 +25,14 @@ namespace Wired.Models
         private Interactable _interactable;
         public void SetPowered(bool powered)
         {
-            IsPowered = powered;
+            if(_interactable is InteractableGenerator gen)
+            {
+                IsPowered = gen.isPowered && gen.fuel > 0f;
+            }
+            else
+            {
+                IsPowered = powered;
+            }
 
             if (this.Asset is BatteryAsset) return;
 

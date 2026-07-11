@@ -35,11 +35,6 @@ namespace Wired.Models
 
         public void AddNode(IElectricNode node) => Nodes.Add(node);
         public void AddConnection(NodeConnection conn) => Connections.Add(conn);
-        public void RecalculateTwice()
-        {
-            RecalculatePower();
-            _recalculationPending = true;
-        }
         public void RecalculatePower()
         {
             if (_frameLocked)
