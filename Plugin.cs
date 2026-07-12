@@ -142,6 +142,7 @@ namespace Wired
 
             time = LightingManager.time;
             OnTimeOfDayUpdated?.Invoke(LightingManager.time, (float)LightingManager.time / (float)LightingManager.cycle);
+            Sprinkler.HandleSprinklers();
 
             return;
         }
@@ -216,15 +217,6 @@ namespace Wired
             private static bool Prefix(InteractableOxygenator __instance, ServerInvocationContext context, bool desiredPowered)
             {
                 return false;
-            }
-        }
-
-        [HarmonyPatch(typeof(InteractableFarm), "updatePlanted")]
-        private static class Patch_InteractableFarm_updatePlanted
-        {
-            private static void Postfix(InteractableFarm __instance, uint newPlanted)
-            {
-                WiredLogger.Info($"newPlanted: {newPlanted}\n ProviderTime: {Provider.time}");
             }
         }
 

@@ -26,10 +26,9 @@ namespace Wired.Models
         /// </summary>
         public void SetPowered(bool state)
         {
-            if(this.TryGetComponent(out LogicGate lg))
-                lg.SetPowered(state);
+
         }
-        public void Switch(bool state)
+        public void Switch(bool state, bool recalculateAfter = true)
         {
             AllowPowerThrough = state;
             if(_spot != null)
@@ -38,7 +37,8 @@ namespace Wired.Models
                     BarricadeManager.ServerSetSpotPowered(_spot, state);
             }
 
-            Plugin.Instance.SendGateToggled(this, state);
+            if(recalculateAfter)
+                Plugin.Instance.SendGateToggled(this, state);
         }
 
         public void Uninitialize()

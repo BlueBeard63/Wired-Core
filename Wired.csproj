@@ -72,6 +72,7 @@
     <Compile Include="Utilities\Raycast.cs" />
     <Compile Include="Utilities\WiredLogger.cs" />
     <Compile Include="WiredAssets\Placeables\ConnectorAsset.cs" />
+    <Compile Include="WiredAssets\Placeables\SprinklerAsset.cs" />
     <Compile Include="WiredAssets\Placeables\SwitchAsset.cs" />
     <Compile Include="WiredAssets\Placeables\TimerAsset.cs" />
     <Compile Include="WiredAssets\Items\RemoteToolAsset.cs" />
@@ -90,6 +91,7 @@
     <Compile Include="WiredInteractables\PlayerDetector.cs" />
     <Compile Include="WiredInteractables\RemoteReceiver.cs" />
     <Compile Include="WiredInteractables\RemoteTransmitter.cs" />
+    <Compile Include="WiredInteractables\Sprinkler.cs" />
     <Compile Include="Wrappers\ConsumerInteractable.cs" />
   </ItemGroup>
   <ItemGroup>

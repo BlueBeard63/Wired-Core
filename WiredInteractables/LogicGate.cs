@@ -25,32 +25,42 @@ public class LogicGate : MonoBehaviour, IWiredInteractable
 
     public void SetPowered(bool state)
     {
+        if (!state)
+        {
+            if (_gateNode.AllowPowerThrough)
+                _gateNode.Switch(false, recalculateAfter: false);
+            return;
+        }
+        bool logic = false;
+
         switch (Type)
         {
             case LogicGateType.AND:
-                _gateNode.Switch(Input0.IsPowered && Input1.IsPowered);
+                logic = Input0.IsPowered && Input1.IsPowered;
                 break;
             case LogicGateType.OR:
-                _gateNode.Switch(Input0.IsPowered || Input1.IsPowered);
+                logic = Input0.IsPowered || Input1.IsPowered;
                 break;
             case LogicGateType.NAND:
-                _gateNode.Switch(!(Input0.IsPowered && Input1.IsPowered));
+                logic = !(Input0.IsPowered && Input1.IsPowered);
                 break;
             case LogicGateType.NOR:
-                _gateNode.Switch(!(Input0.IsPowered || Input1.IsPowered));
+                logic = !(Input0.IsPowered || Input1.IsPowered);
                 break;
             case LogicGateType.XNOR:
-                _gateNode.Switch(Input0.IsPowered == Input1.IsPowered);
+                logic = Input0.IsPowered == Input1.IsPowered;
                 break;
             case LogicGateType.XOR:
-                _gateNode.Switch(Input0.IsPowered != Input1.IsPowered);
+                logic = Input0.IsPowered != Input1.IsPowered;
                 break;
             case LogicGateType.NOT:
-                _gateNode.Switch(!Input0.IsPowered);
+                logic = !Input0.IsPowered;
                 break;
             default:
                 break;
         }
+        if(_gateNode.AllowPowerThrough != logic)
+            _gateNode.Switch(logic, recalculateAfter: false);
     }
     private void Awake()
     {

@@ -83,6 +83,8 @@ namespace Wired.Models
                         if (current is ConsumerNode cons) currentIslandConsumption += cons.Consumption;
                     }
 
+                    bool ograbim_bank = false;
+
                     if (!current.AllowPowerThrough)
                         continue;
 
@@ -150,7 +152,6 @@ namespace Wired.Models
                                       currentIslandSupply >= currentIslandConsumption;
                 }
 
-
                 foreach (var node in islandNodes)
                 {
                     if(node is TimerNode timer)
@@ -159,18 +160,28 @@ namespace Wired.Models
                             timer.StartTimer();
                         else
                             timer.StopIfRunning();
-                        continue;
                     }
-                    if (node.IsPowered != hasEnoughPower)
+                    else if(node is ConsumerNode cons)
                     {
-                        node.SetPowered(hasEnoughPower);
-                    }
-                    if(node is ConsumerNode cons)
-                    {
+                        if (node.IsPowered != hasEnoughPower)
+                            node.SetPowered(hasEnoughPower);
+                        
                         if(cons.TryGetComponent(out NetworkAnalyzer na))
                         {
                             na.UpdateData(currentIslandSupply + totalBatterySupply, currentIslandConsumption);
                         }
+                    }
+                    else if (node is LogicGateSubnode lgsn)
+                    {
+                        node.SetPowered(currentIslandSupply > 0f);
+                    }
+                }
+                foreach(var node in islandNodes)
+                {
+                    if(node is GateNode gn && gn.TryGetComponent(out LogicGate lg))
+                    {
+                        lg.SetPowered(currentIslandSupply > 0f);
+                            _recalculationPending = true;
                     }
                 }
             }

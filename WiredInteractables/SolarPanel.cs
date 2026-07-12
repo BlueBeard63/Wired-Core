@@ -1,4 +1,5 @@
-﻿using Rocket.Unturned.Player;
+﻿using Rocket.Core.Assets;
+using Rocket.Unturned.Player;
 using SDG.Unturned;
 using System;
 using UnityEngine;
@@ -16,6 +17,12 @@ public class SolarPanel : MonoBehaviour, IWiredInteractable
     private SolarPanelAsset _asset;
 
     public bool IsOn { get; }
+
+    /// <summary>
+    /// Exposed for <see cref="PlayerViewService.UpdateGogglesView"/> to put it into goggles ui.
+    /// </summary>
+    public float Efficiency { get; private set; }
+    public bool IsSunBlocked { get; private set; }
 
     public Vector3 PanelNormal;
     private Transform PanelNormalTransform;
@@ -140,22 +147,20 @@ public class SolarPanel : MonoBehaviour, IWiredInteractable
 
         if(_asset.HasMovingPart) RotateMovingPart(sunangle);
 
-        var efficiency = GetSolarPanelEfficiency(sunangle);
+        Efficiency = GetSolarPanelEfficiency(sunangle);
 
-        var newsupply = _asset.Supply * efficiency;
+        var newsupply = _asset.Supply * Efficiency;
         _supplierNode.Supply = (float)Math.Round(newsupply);
-        if(_supplierNode.Supply <= 0f && _supplierNode.IsPowered)
+        if(_supplierNode.Supply <= 0f)
         {
             _supplierNode.SetPowered(false);
         }
-        else if(_supplierNode.Supply > 0f && !_supplierNode.IsPowered)
+        else if(_supplierNode.Supply > 0f)
         {
             _supplierNode.SetPowered(true);
         }
 
         NodeConnectionsService.RecalculatePowerForNode(_supplierNode);
-
-        if (MovingPart == null) return;
 
         // WiredLogger.Info($"Current supply: {_supplierNode.Supply}");
     }
@@ -168,14 +173,28 @@ public class SolarPanel : MonoBehaviour, IWiredInteractable
         if(_asset.HasMovingPart)
         {
             PanelNormal = new Vector3(-MovingPart.forward.x, MovingPart.forward.y, -MovingPart.forward.z);
+
+            if (Physics.Raycast(MovingPart.position + MovingPart.forward, -(Quaternion.Euler(sunangle, LevelLighting.azimuth, 0f) * Vector3.forward), 256, RayMasks.BLOCK_COLLISION))
+            {
+                IsSunBlocked = true;
+                return 0f;
+            }
         }
         else
         {
             PanelNormal = PanelNormalTransform.forward;
+
+            if (Physics.Raycast(PanelNormalTransform.position, -(Quaternion.Euler(sunangle, LevelLighting.azimuth, 0f) * Vector3.forward), 256, RayMasks.BLOCK_COLLISION))
+            {
+                IsSunBlocked = true;
+                return 0f;
+            }
         }
 
-        float dot = Vector3.Dot(PanelNormal, sunDirection.normalized);
+        IsSunBlocked = false;
+        float dot = Math.Abs(Vector3.Dot(PanelNormal, sunDirection.normalized));
 
+        if (LightingManager.isNighttime) dot *= _asset.NightSupplyModifier;
         // WiredLogger.Info($"Efficiency: {Mathf.Max(0f, dot)}, PanelNormal direction: {PanelNormal}, sunDirection: {sunDirection}");
 
         return Mathf.Max(0f, dot);

@@ -28,6 +28,8 @@ public class PlayerViewService : MonoBehaviour
     private readonly Dictionary<CSteamID, uint> _lookingAt = [];
     private readonly HashSet<UnturnedPlayer> _playersInLinkingMode = [];
     private readonly HashSet<UnturnedPlayer> _playersWithGogglesOn = [];
+    private bool _viewUpdateFrameLocked = false;
+    
     public void Init(WiredAssetsService assets, Resources resources, NodeConnectionsService ncs, Dictionary<CSteamID, Transform> selectedNode)
     {
         WiringToolService.OnNodeSelected += OnNodeSelected;
@@ -50,7 +52,9 @@ public class PlayerViewService : MonoBehaviour
 
     private void OnBarricadeMoveRequested(CSteamID instigator, byte x, byte y, ushort plant, uint instanceID, ref Vector3 point, ref byte angle_x, ref byte angle_y, ref byte angle_z, ref bool shouldAllow)
     {
+        if (_viewUpdateFrameLocked) return;
         Console.WriteLine($"Barricade move requetsed to {point}");
+        _viewUpdateFrameLocked = true;
         StartCoroutine(BarricadeMovedCoroutine());
     }
     private IEnumerator BarricadeMovedCoroutine()
@@ -258,6 +262,7 @@ public class PlayerViewService : MonoBehaviour
 
     private void Update()
     {
+        _viewUpdateFrameLocked = false;
         foreach (var steamplayer in Provider.clients)
         {
             var player = UnturnedPlayer.FromSteamPlayer(steamplayer);
@@ -425,7 +430,7 @@ public class PlayerViewService : MonoBehaviour
         HashSet<IElectricNode> visibleNodes = [];
 
         var bfinder = new BarricadeFinder(player.Position);
-        foreach (BarricadeDrop drop in bfinder.GetBarricadesInRadius(100f))
+        foreach (BarricadeDrop drop in bfinder.GetBarricadesInRadius(128f))
         {
             Transform t = drop.model;
             if (t == null) continue;
@@ -587,6 +592,7 @@ public class PlayerViewService : MonoBehaviour
             return;
         }
 
+        EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Container", false);
         EffectManager.sendUIEffectVisibility(Resources.GogglesUIKey, Provider.findTransportConnection(steamid), true, "Container", true);
         switch (node)
         {
@@ -596,6 +602,12 @@ public class PlayerViewService : MonoBehaviour
                 if(sup.TryGetComponent(out Battery battery))
                 {
                     SendGogglesUIText(steamid, "Text_1", $"Charge: <color=#00eeff>{Math.Round((battery.Charge/battery.MaxCapacity) * 100)}%");
+                    SendGogglesUIText(steamid, "Text_2", node.IsPowered ? "Powered: <color=#00eeff>Yes" : "Powered: <color=#00eeff>No");
+                }
+                else if(sup.TryGetComponent(out SolarPanel solarpanel))
+                {
+                    SendGogglesUIText(steamid, "Text_1", $"Efficiency: <color=#00eeff>{Math.Round(solarpanel.Efficiency * 100)}%" + 
+                        (solarpanel.IsSunBlocked ? " (No direct sunlight)" : string.Empty));
                     SendGogglesUIText(steamid, "Text_2", node.IsPowered ? "Powered: <color=#00eeff>Yes" : "Powered: <color=#00eeff>No");
                 }
                 else

@@ -32,6 +32,7 @@ internal class NetworkAnalyzer : MonoBehaviour, IWiredInteractable
     }
     public void UpdateData(float supply, float demand)
     {
+        if (_consumer == null) return;
         if (_consumer.IsPowered && _display != null)
         {
             BarricadeManager.ServerSetSignText(_display, $"{supply}<br>{demand}");

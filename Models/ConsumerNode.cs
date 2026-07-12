@@ -20,13 +20,12 @@ namespace Wired.Models
         public void SetPowered(bool powered)
         {
             IsPowered = powered;
+            Interactable ??= new ConsumerInteractable(this.transform);
             Interactable.SetPowered(powered);
         }
         private void Awake()
         {
             InstanceID = BarricadeManager.FindBarricadeByRootTransform(this.transform).instanceID;
-
-            Interactable = new ConsumerInteractable(this.transform);
 
             var p = transform.Find("WireConnectPoint");
             if (p != null) WireConnectPoint = p;

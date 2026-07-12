@@ -185,6 +185,15 @@ namespace Wired.Services
                     parser.TryGetFloat("DisplayBarricadeID", out float did) ? (ushort)did : (ushort)0));
                 return;
             }
+            if(parser.HasEntry("WiredBuild Sprinkler"))
+            {
+                WiredAssets.Add(asset.GUID, new
+                    SprinklerAsset(
+                    asset.GUID,
+                    consumption,
+                    parser.TryGetFloat("Effective_Radius_Meters", out float radius) ? radius : 4f));
+                return;
+            }
             if(parser.HasEntry("WiredBuild BatteryCharger"))
             {
                 var chargerate = parser.TryGetFloat("BatteryCharger_ChargePerHour", out float cpr) ? cpr : 100f;

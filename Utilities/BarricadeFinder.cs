@@ -40,12 +40,23 @@ namespace Wired
                 }
                 return result;
             }
-            foreach (var reg in regions)
+
+            radius *= radius;
+            var search = new List<RegionCoordinate>();
+            Regions.getRegionsInRadius(_position, radius, search);
+
+            for (int i = 0; i < search.Count; i++)
             {
-                foreach (var drop in reg.drops)
+                RegionCoordinate regionCoordinate = search[i];
+                if (regions[regionCoordinate.x, regionCoordinate.y] == null)
                 {
-                    float dist = Vector3.Distance(_position, drop.model.position);
-                    if (dist < radius)
+                    continue;
+                }
+
+                foreach (BarricadeDrop drop in regions[regionCoordinate.x, regionCoordinate.y].drops)
+                {
+                    Transform model = drop.model;
+                    if (!(model == null) && (model.position - _position).sqrMagnitude < radius)
                     {
                         result.Add(drop);
                     }
@@ -55,7 +66,7 @@ namespace Wired
         }
         public List<BarricadeDrop> GetBarricadesOfType<T>() where T: Component
         {
-            List<BarricadeDrop> result = new List<BarricadeDrop>();
+            List<BarricadeDrop> result = [];
 
             foreach(BarricadeRegion reg in BarricadeManager.regions)
             {
@@ -63,6 +74,20 @@ namespace Wired
                 {
                     if (drop.model.TryGetComponent(out T _))
                         result.Add(drop);
+                }
+            }
+            return result;
+        }
+        public Queue<T> GetBarricadesOfTypeQueue<T>() where T: Component
+        {
+            Queue<T> result = new();
+
+            foreach (BarricadeRegion reg in BarricadeManager.regions)
+            {
+                foreach (BarricadeDrop drop in reg.drops)
+                {
+                    if (drop.model.TryGetComponent(out T component))
+                        result.Enqueue(component);
                 }
             }
             return result;

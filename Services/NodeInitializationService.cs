@@ -166,6 +166,16 @@ namespace Wired.Services
                     createdNode = cons;
                     break;
 
+                case SprinklerAsset sprinklerAsset:
+                    var spr = barricade.model.gameObject.AddComponent<ConsumerNode>();
+                    spr.barricade = barricade;
+                    spr.Asset = sprinklerAsset;
+                    spr.Consumption = sprinklerAsset.Consumption;
+                    barricade.model.gameObject.AddComponent<Sprinkler>();
+                    spr.SetPowered(false);
+                    createdNode = spr;
+                    break;
+
                 case NetworkAnalyzerAsset networkDataDisplayAsset:
                     var ndaa = barricade.model.gameObject.AddComponent<ConsumerNode>();
                     ndaa.barricade = barricade;

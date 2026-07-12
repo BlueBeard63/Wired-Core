@@ -43,7 +43,7 @@ public class Battery : MonoBehaviour, IWiredInteractable
         }
 
         MaxCapacity = _asset.Capacity;
-        MaxBurnPerSecond = _asset.MaxBurnPerSecond * 10;
+        MaxBurnPerSecond = _asset.MaxBurnPerSecond;
         Supply = _asset.Supply;
         Charge = MaxCapacity;
     }
