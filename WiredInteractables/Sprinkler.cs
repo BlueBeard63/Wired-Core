@@ -62,11 +62,10 @@ public class Sprinkler : MonoBehaviour, IWiredInteractable
                 if (!crop.model.TryGetComponent(out InteractableFarm farm)) continue;
                 if(farm.IsFullyGrown) continue;
 
-                var newplanted = farm.planted - 10 > 10 ? farm.planted - 10 : 1;
+                var newplanted = farm.planted - 3 > 3 ? farm.planted - 3 : 1;
                 BarricadeManager.updateFarm(farm.transform, newplanted, true);
             }
         }
         sw.Stop();
-        WiredLogger.Info($"Handled sprinklers, took {sw.ElapsedTicks /10000f} ms");
     }
 }

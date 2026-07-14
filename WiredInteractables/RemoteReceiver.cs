@@ -6,7 +6,9 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 using Wired.Models;
+using Wired.Services;
 using Wired.Utilities;
+using Wired.WiredAssets;
 
 namespace Wired.WiredInteractables;
 
@@ -47,6 +49,14 @@ public class RemoteReceiver : MonoBehaviour, IWiredInteractable
         _switchNode = GetComponent<GateNode>();
 
         RemoteTransmitter.OnRemoteTransmissionCommenced += OnRemoteTransmissionCommenced;
+        RemoteToolService.OnRemoteToolSignalTransmitted += OnRemoteToolSignalTransmitted;
+    }
+
+    private void OnRemoteToolSignalTransmitted(Player player, string frequency)
+    {
+        WiredLogger.Info($"received remot tool signal on {frequency}, this freq: {Frequency}");
+        if (frequency != this.Frequency) return;
+            _switchNode.Switch(!_switchNode.AllowPowerThrough);
     }
 
     private void OnRemoteTransmissionCommenced(string frequency, RemoteSignalType signal)
@@ -57,7 +67,7 @@ public class RemoteReceiver : MonoBehaviour, IWiredInteractable
             if(signal != RemoteSignalType.TOGGLE)
                 _switchNode.Switch(signal == RemoteSignalType.ON);
             else
-                _switchNode.Switch(!_switchNode.IsPowered);
+                _switchNode.Switch(!_switchNode.AllowPowerThrough);
         }
     }
 
@@ -97,6 +107,7 @@ public class RemoteReceiver : MonoBehaviour, IWiredInteractable
     public void Uninitialize()
     {
         RemoteTransmitter.OnRemoteTransmissionCommenced -= OnRemoteTransmissionCommenced;
+        RemoteToolService.OnRemoteToolSignalTransmitted -= OnRemoteToolSignalTransmitted;
         Destroy(this);
     }
 }

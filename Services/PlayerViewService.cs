@@ -115,6 +115,12 @@ public class PlayerViewService : MonoBehaviour
     private void OnPlayerConnected(UnturnedPlayer player)
     {
         StartCoroutine(SendWires(player));
+        var glasses = player.Player.clothing.glassesAsset;
+        if (glasses == null) return;
+        if (_assets.WiredAssets.ContainsKey(glasses.GUID) && (_assets.WiredAssets[glasses.GUID] is EngineerGogglesAsset))
+        {
+            _playersWithGogglesOn.Add(player);
+        }
     }
     private IEnumerator SendWires(UnturnedPlayer player)
     {
@@ -382,7 +388,11 @@ public class PlayerViewService : MonoBehaviour
                 ClearPreviewView(steamid);
                 EffectAsset effect = GetPreviewEffectForNodes(selectedNodeComponent, node);
                 SendNodeSelectedEffect(player, drop.model.position, node);
-                TracePath(player, selectedTransform.position, drop.model.position, effect);
+                if(lgs == null)
+                    TracePath(player, selectedTransform.position, drop.model.position, effect);
+                else
+                    TracePath(player, selectedTransform.position, lgs.transform.position, effect);
+
             }
         }
     }
@@ -417,8 +427,8 @@ public class PlayerViewService : MonoBehaviour
     {
         if (node1 is SupplierNode || node2 is SupplierNode) return _resources.preview_power;
         if (node1 is TimerNode || node2 is TimerNode) return _resources.preview_gate;
-        if (node1 is GateNode || node2 is GateNode) return _resources.preview_gate;
         if (node1 is LogicGateSubnode || node2 is LogicGateSubnode) return _resources.preview_subnode;
+        if (node1 is GateNode || node2 is GateNode) return _resources.preview_gate;
         return _resources.preview_consumer;
     }
 
