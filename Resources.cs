@@ -48,6 +48,8 @@ namespace Wired
         public List<Guid> nodeeffects = [];
         public List<Guid> previeweffects = [];
         public List<Guid> selectedeffects = [];
+
+        public Dictionary<string, EffectAsset> PonderEffects = [];
         
         public const short GogglesUIKey = 15302;
 
@@ -108,6 +110,18 @@ namespace Wired
             previeweffects.Add(preview_gate.GUID);
             previeweffects.Add(preview_timer.GUID);
             previeweffects.Add(preview_subnode.GUID);
+
+            List<EffectAsset> ponderEffects = [];
+            Assets.find(ponderEffects);
+
+            foreach(var effect in ponderEffects)
+            {
+                if (effect.name.EndsWith("_Ponder"))
+                {
+                    WiredLogger.Info($"Found ponder effect {effect.name}");
+                    PonderEffects.Add(effect.name, effect);
+                }
+            }
         }
     }
 }

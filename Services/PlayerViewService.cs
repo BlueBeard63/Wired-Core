@@ -34,6 +34,8 @@ public class PlayerViewService : MonoBehaviour
 
     private float _lastUpdateTime = 0f;
     private const float UPDATE_RATE = 0.1f;
+
+    private const short PonderUIKey = 26000;
     public void Init(WiredAssetsService assets, Resources resources, NodeConnectionsService ncs, Dictionary<CSteamID, Transform> selectedNode)
     {
         WiringToolService.OnNodeSelected += OnNodeSelected;
@@ -44,7 +46,8 @@ public class PlayerViewService : MonoBehaviour
         PlayerClothing.OnGlassesChanged_Global += OnGlassesChanged_Global;
         PlayerEquipment.OnUseableChanged_Global += OnUseableChanged_Global;
         BarricadeManager.onTransformRequested += OnBarricadeMoveRequested;
-
+        NPCEventManager.onEvent += onEvent;
+        EffectManager.onEffectButtonClicked += onEffectButtonClicked;
 
         U.Events.OnPlayerConnected += OnPlayerConnected;
         
@@ -54,10 +57,37 @@ public class PlayerViewService : MonoBehaviour
         _selectedNode = selectedNode;
     }
 
+    private void onEffectButtonClicked(Player player, string buttonName)
+    {
+        if (buttonName.EndsWith("_Close"))
+        {
+            WiredLogger.Info($"Received effect button click, \"{buttonName}\", trying to find {buttonName.Replace("_Close", string.Empty)}");
+            if(_resources.PonderEffects.TryGetValue(buttonName.Replace("_Close", string.Empty), out EffectAsset asset))
+            {
+                EffectManager.ClearEffectByGuid(asset.GUID, player.channel.owner.transportConnection);
+                player.setPluginWidgetFlag(EPluginWidgetFlags.Modal, false);
+            }
+        }
+    }
+
+    private void onEvent(Player instigatingPlayer, string eventId)
+    {
+        WiredLogger.Info($"Received NPCGlobalEvent {eventId}");
+        if (eventId.EndsWith("_Ponder"))
+        {
+            if (_resources.PonderEffects.TryGetValue(eventId, out EffectAsset effect))
+            {
+                if (effect == null) return;
+                EffectManager.SendUIEffect(effect, PonderUIKey, instigatingPlayer.channel.owner.transportConnection, true);
+                instigatingPlayer.setPluginWidgetFlag(EPluginWidgetFlags.Modal, true);
+            }
+        }
+    }
+
     private void OnBarricadeMoveRequested(CSteamID instigator, byte x, byte y, ushort plant, uint instanceID, ref Vector3 point, ref byte angle_x, ref byte angle_y, ref byte angle_z, ref bool shouldAllow)
     {
         if (_viewUpdateFrameLocked) return;
-        Console.WriteLine($"Barricade move requetsed to {point}");
+        WiredLogger.Info($"Barricade move requetsed to {point}");
         _viewUpdateFrameLocked = true;
         StartCoroutine(BarricadeMovedCoroutine());
     }
@@ -267,7 +297,7 @@ public class PlayerViewService : MonoBehaviour
     }
     private void OnNodeSelectionCleared(UnturnedPlayer player)
     {
-        player.Player.ServerShowHint("Selection cleared.", 2f);
+        NPCEventManager.BroadcastEvent(player.Player, "WiringTool:Clear", ENPCEventReplicationMode.InstigatorOnly);
         _playersInLinkingMode.Remove(player);
         _lookingAt.Remove(player.CSteamID);
         ClearPreviewView(player.CSteamID);
@@ -276,7 +306,7 @@ public class PlayerViewService : MonoBehaviour
 
     private void OnNodeSelected(UnturnedPlayer player, Transform nodeTransform)
     {
-        player.Player.ServerShowHint("Click on another <b>thing</b> to link them together!<br>Click anywhere else to cancel.", 60f);
+        NPCEventManager.BroadcastEvent(player.Player, "WiringTool:Message_Linking", ENPCEventReplicationMode.InstigatorOnly);
         _selectedNode[player.CSteamID] = nodeTransform;
         _playersInLinkingMode.Add(player);
         _lookingAt[player.CSteamID] = 0;
