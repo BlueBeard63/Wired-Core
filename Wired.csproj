@@ -31,6 +31,9 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <RunPostBuildEvent>Always</RunPostBuildEvent>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Include="Commands\WiredCommand.cs" />
     <Compile Include="Models\LogicGateSubnode.cs" />
@@ -44,6 +47,7 @@
     <Compile Include="WiredAssets\Items\EngineerGogglesAsset.cs" />
     <Compile Include="WiredAssets\Items\ManualTabletAsset.cs" />
     <Compile Include="WiredAssets\Placeables\ButtonAsset.cs" />
+    <Compile Include="WiredAssets\Placeables\DayNightSensorAsset.cs" />
     <Compile Include="WiredAssets\Placeables\LogicGateAsset.cs" />
     <Compile Include="WiredAssets\Placeables\SolarPanelAsset.cs" />
     <Compile Include="WiredAssets\Placeables\NetworkAnalyzerAsset.cs" />
@@ -84,6 +88,7 @@
     <Compile Include="WiredInteractables\Battery.cs" />
     <Compile Include="WiredInteractables\BatteryCharger.cs" />
     <Compile Include="WiredInteractables\Button.cs" />
+    <Compile Include="WiredInteractables\DayNightSensor.cs" />
     <Compile Include="WiredInteractables\IWiredInteractable.cs" />
     <Compile Include="WiredInteractables\Keypad.cs" />
     <Compile Include="WiredInteractables\LogicGate.cs" />
@@ -198,6 +203,6 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy /Y "$(TargetPath)" "C:\Program Files (x86)\Steam\steamapps\common\U3DS\Servers\Default\Rocket\Plugins"</PostBuildEvent>
+    <PostBuildEvent>scp -o StrictHostKeyChecking=no -P 2022 -i "C:\Users\hellr\.ssh\id_ed25519" "$(TargetPath)" "mew.03d29ec1@43.245.225.143:/Servers/DevServer/Rocket/Plugins/"  || exit 0</PostBuildEvent>
   </PropertyGroup>
 </Project>
