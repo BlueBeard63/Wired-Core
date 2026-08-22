@@ -6,17 +6,17 @@ using System.Threading.Tasks;
 
 namespace Wired.WiredAssets
 {
-    public class DayNightSensorAsset : IWiredAsset
+    public class DaylightSensorAsset : IWiredAsset
     {
         public Guid GUID { get; set; }
-        public DayNightSensorMode Mode { get; set; }
-        public DayNightSensorAsset(Guid guid, DayNightSensorMode mode)
+        public DaylightSensorMode Mode { get; set; }
+        public DaylightSensorAsset(Guid guid, DaylightSensorMode mode)
         {
             GUID = guid;
             Mode = mode;
         }
     }
-    public enum DayNightSensorMode
+    public enum DaylightSensorMode
     {
         Day,
         Night

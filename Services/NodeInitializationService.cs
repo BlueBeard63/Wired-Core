@@ -185,11 +185,11 @@ namespace Wired.Services
                     createdNode = ndaa;
                     break;
 
-                case DayNightSensorAsset dayNightSensorAsset:
+                case DaylightSensorAsset dayNightSensorAsset:
                     var gate = barricade.model.gameObject.AddComponent<GateNode>();
                     gate.Asset = dayNightSensorAsset;
                     gate.SetPowered(false);
-                    var dnsa = barricade.model.gameObject.AddComponent<DayNightSensor>();
+                    var dnsa = barricade.model.gameObject.AddComponent<DaylightSensor>();
                     break;
 
                 case BatteryChargerAsset batteryChargerAsset:

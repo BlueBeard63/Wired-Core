@@ -166,13 +166,13 @@ namespace Wired.Services
                 }
                 WiredLogger.Info($"Found wired asset: {asset.name} ({asset.GUID}) as Type Gate; Build LogicGate");
             }
-            else if (parser.HasEntry("DayNightSensor"))
+            else if (parser.HasEntry("DaylightSensor"))
             {
                 WiredAssets.Add(asset.GUID,
-                new DayNightSensorAsset(
+                new DaylightSensorAsset(
                 guid: asset.GUID,
-                mode: parser.TryGetString("Mode", out string mode) ? (mode == "Night" ? DayNightSensorMode.Night : DayNightSensorMode.Day) : DayNightSensorMode.Day));
-                WiredLogger.Info($"Found wired asset: {asset.name} ({asset.GUID}) as Type Gate; Build Keypad");
+                mode: parser.TryGetString("Mode", out string mode) ? (mode == "Night" ? DaylightSensorMode.Night : DaylightSensorMode.Day) : DaylightSensorMode.Day));
+                WiredLogger.Info($"Found wired asset: {asset.name} ({asset.GUID}) as Type Gate; Build DaylightSensor");
             }
         }
         private void PopulateConsumer(AssetParser parser, ItemAsset asset)

@@ -10,19 +10,19 @@ using Wired.WiredAssets;
 
 namespace Wired.WiredInteractables
 {
-    public class DayNightSensor : MonoBehaviour, IWiredInteractable
+    public class DaylightSensor : MonoBehaviour, IWiredInteractable
     {
         public Interactable interactable { get; private set; }
         
         public bool IsOn { get; private set; }
         public bool IsObstructed { get; private set; }
 
-        private DayNightSensorAsset _asset;
+        private DaylightSensorAsset _asset;
         private GateNode _gate;
         public void Start()
         {
             _gate = gameObject.GetComponent<GateNode>();
-            _asset = (DayNightSensorAsset)_gate.Asset;
+            _asset = (DaylightSensorAsset)_gate.Asset;
 
             Plugin.OnTimeOfDayUpdated += OnTimeOfDayUpdated;
         }
@@ -33,12 +33,12 @@ namespace Wired.WiredInteractables
             if(!raycast.GetPoint(out _))
             {
                 IsObstructed = false;
-                SetPowered(LightingManager.isDaytime == (_asset.Mode == DayNightSensorMode.Day));
+                SetPowered(LightingManager.isDaytime == (_asset.Mode == DaylightSensorMode.Day));
             }
             else
             {
                 IsObstructed = true;
-                SetPowered(_asset.Mode != DayNightSensorMode.Day);
+                SetPowered(_asset.Mode != DaylightSensorMode.Day);
             }
         }
 

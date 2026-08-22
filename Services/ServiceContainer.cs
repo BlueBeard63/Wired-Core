@@ -18,6 +18,7 @@ namespace Wired.Services
         public RemoteToolService RemoteToolService { get; private set; }
         public PlayerViewService PlayerViewService { get; private set; }
         public KeypadUIService KeypadUIService { get; private set; }
+        public WindService WindService { get; private set; }
         public JsonService JsonService { get; set; }
         public WiredDeltaService WiredDeltaService { get; set; }
         public ServiceContainer(Resources resources)
@@ -30,6 +31,7 @@ namespace Wired.Services
             PlayerViewService = new GameObject("PlayerViewService").AddComponent<PlayerViewService>();
             PlayerViewService.Init(WiredAssetsService, resources, NodeConnectionsService, WiringToolService.SelectedNode);
             KeypadUIService = new();
+            WindService = new();
             JsonService = new(NodeConnectionsService, Path.Combine(Plugin.Instance.Directory, $"Nodes_{Provider.map}.json"));
             JsonService.LoadFromJson();
             WiredDeltaService = new GameObject("WiredDeltaService").AddComponent<WiredDeltaService>();
