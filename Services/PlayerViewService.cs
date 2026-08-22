@@ -717,6 +717,13 @@ public class PlayerViewService : MonoBehaviour
                     SendGogglesUIText(steamid, "Text_1", $"Action time: <color=#00eeff>{button.StaysPressedSeconds} seconds");
                     break;
                 }
+                if(sw.TryGetComponent(out DayNightSensor dns))
+                {
+                    var asset = sw.Asset as DayNightSensorAsset;
+                    SendGogglesUIText(steamid, "Text_1", $"Mode: {asset.Mode}");
+                    if(dns.IsObstructed)
+                        SendGogglesUIText(steamid, "Text_2", $"Sunlight obstructed");
+                }
                 break;
             default:
                 break;

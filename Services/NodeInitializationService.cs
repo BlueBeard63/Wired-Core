@@ -10,7 +10,6 @@ using Wired.Models;
 using Wired.Utilities;
 using Wired.WiredAssets;
 using Wired.WiredInteractables;
-using static SDG.Unturned.GunAttachmentEventHook;
 
 namespace Wired.Services
 {
@@ -184,6 +183,13 @@ namespace Wired.Services
                     barricade.model.gameObject.AddComponent<NetworkAnalyzer>();
                     ndaa.SetPowered(false);
                     createdNode = ndaa;
+                    break;
+
+                case DayNightSensorAsset dayNightSensorAsset:
+                    var gate = barricade.model.gameObject.AddComponent<GateNode>();
+                    gate.Asset = dayNightSensorAsset;
+                    gate.SetPowered(false);
+                    var dnsa = barricade.model.gameObject.AddComponent<DayNightSensor>();
                     break;
 
                 case BatteryChargerAsset batteryChargerAsset:

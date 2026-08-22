@@ -56,14 +56,16 @@ namespace Wired
             hitDistance = hit.distance;
             return BarricadeManager.FindBarricadeByRootTransform(targetTransform);
         }
-        public Vector3 GetPoint()
+        public bool GetPoint(out Vector3 point)
         {
+            point = Vector3.zero;
             Transform aim = player.look.aim;
             if (!Physics.Raycast(aim.position, aim.forward, out var hitInfo, Range, RayMasks.BLOCK_COLLISION))
             {
-                return Vector3.zero;
+                return false;
             }
-            return hitInfo.point;
+            point = hitInfo.point;
+            return true;
         }
     }
 }
