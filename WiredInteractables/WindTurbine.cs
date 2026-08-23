@@ -33,7 +33,7 @@ namespace Wired.WiredInteractables
 
         public void Uninitialize()
         {
-            
+            Plugin.OnTimeOfDayUpdated -= OnTimeOfDayUpdated;
         }
     }
 }
