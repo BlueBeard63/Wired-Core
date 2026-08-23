@@ -86,6 +86,7 @@
     <Compile Include="WiredAssets\Items\WiringToolAsset.cs" />
     <Compile Include="WiredAssets\Placeables\RemoteReceiverAsset.cs" />
     <Compile Include="WiredAssets\Placeables\RemoteTransmitterAsset.cs" />
+    <Compile Include="WiredAssets\Placeables\WindTurbineAsset.cs" />
     <Compile Include="WiredInteractables\Battery.cs" />
     <Compile Include="WiredInteractables\BatteryCharger.cs" />
     <Compile Include="WiredInteractables\Button.cs" />
@@ -99,6 +100,7 @@
     <Compile Include="WiredInteractables\RemoteReceiver.cs" />
     <Compile Include="WiredInteractables\RemoteTransmitter.cs" />
     <Compile Include="WiredInteractables\Sprinkler.cs" />
+    <Compile Include="WiredInteractables\WindTurbine.cs" />
     <Compile Include="Wrappers\ConsumerInteractable.cs" />
   </ItemGroup>
   <ItemGroup>

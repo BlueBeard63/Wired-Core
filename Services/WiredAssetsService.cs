@@ -222,6 +222,11 @@ namespace Wired.Services
                 WiredAssets.Add(asset.GUID, new SolarPanelAsset(asset.GUID, supply, nightmodifier, movingpartminangle, (ushort)movingpartid));
                 return;
             }
+            if(parser.HasEntry("WiredBuild WindTurbine"))
+            {
+                WiredAssets.Add(asset.GUID, new WindTurbineAsset(asset.GUID, supply));
+                return;
+            }
             if(parser.HasEntry("WiredBuild Battery"))
             {
                 var capacity = parser.TryGetFloat($"Capacity", out float capa) ? capa : 100f;
